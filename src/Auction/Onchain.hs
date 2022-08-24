@@ -30,7 +30,9 @@ module Auction.Onchain
     ( auctionAddress
     , auctionHash    
     , auctionValidator
+    -- , myAddress
     , typedAuctionValidator
+    , typedValidator
     )    
     where
 
@@ -81,6 +83,11 @@ auctionHash = Scripts.validatorHash typedAuctionValidator
 
 auctionAddress :: Ledger.Address
 auctionAddress = scriptHashAddress auctionHash    
+
+
+{-# INLINEABLE typedValidator #-}
+typedValidator :: Scripts.TypedValidator Scripts.Any
+typedValidator = Scripts.unsafeMkTypedValidator auctionValidator
 
 
 {-# INLINABLE mkAuctionValidator #-}

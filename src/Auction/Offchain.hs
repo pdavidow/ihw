@@ -69,7 +69,7 @@ start StartParams{..} = do
 
     let tx = Constraints.mustPayToTheScript (PlutusTx.toBuiltinData d) v
 
-    ledgerTx <- submitTxConstraints typedAuctionValidator tx       
+    ledgerTx <- submitTxConstraints typedValidator tx       
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
     tell $ Last $ Just anchor -- broadcasted here, only after tx confirmed
 
@@ -167,7 +167,7 @@ mintAnchor = do
 
 findViaAnchor :: Anchor -> Contract w s T.Text (Maybe (TxOutRef, ChainIndexTxOut, AuctionDatum))
 findViaAnchor anchorSymbol = do
-    utxos <- Map.filter f <$> utxosTxOutTxAt $ scriptHashAddress auctionHash
+    utxos <- Map.filter f <$> utxosTxOutTxAt auctionAddress
     pure $ case Map.toList utxos of
         [(oref, (o, citx))] -> (oref, o,) <$> auctionDatum (toTxOut o) (\dh -> Map.lookup dh $ _citxData citx)
         _ -> Nothing
