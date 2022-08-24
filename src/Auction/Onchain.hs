@@ -40,18 +40,19 @@ import qualified Data.ByteString.Short as SBS
 import           Codec.Serialise       ( serialise )
 
 import           Ledger
+import           Ledger.Ada           as Ada
 
 import qualified Plutus.V1.Ledger.Scripts as Plutus
 import           Cardano.Api.Shelley (PlutusScript (..), PlutusScriptV1)
 import qualified Ledger.Typed.Scripts as Scripts
-import qualified Ledger.Value as LV
+import qualified Ledger.Value as Value
 import qualified PlutusTx
 import           PlutusTx.Prelude 
 
 import           Anchor 
 -- import           Auction.TypesAuctionRedeemer
 import           Auction.Share
-import           Auction.Utility ( info, isCorrectSlotRange, isValuePaidTo )
+-- import           Auction.Utility ( info, isCorrectSlotRange, isValuePaidTo )
 
 
 data Auctioning
@@ -86,6 +87,7 @@ auctionAddress = scriptHashAddress auctionHash
 mkAuctionValidator :: AuctionDatum -> AuctionAction -> ScriptContext -> Bool
 mkAuctionValidator ad redeemer ctx =
     traceIfFalse "wrong input value" correctInputValue &&
+
     case redeemer of
         MkBid b@Bid{..} ->
             traceIfFalse "bid too low"        (sufficientBid bBid)         &&
@@ -93,6 +95,7 @@ mkAuctionValidator ad redeemer ctx =
             traceIfFalse "wrong output value" (correctBidOutputValue bBid) &&
             traceIfFalse "wrong refund"       correctBidRefund             &&
             traceIfFalse "too late"           correctBidSlotRange
+
         Close           ->
             traceIfFalse "too early" correctCloseSlotRange &&
             case adHighestBid ad of
@@ -118,14 +121,14 @@ mkAuctionValidator ad redeemer ctx =
             [i] -> i
             _   -> traceError "expected exactly one script input"
 
-    inVal :: Value
+    inVal :: Ledger.Value
     inVal = txOutValue . txInInfoResolved $ input
 
     auction :: Auction
     auction = adAuction ad
 
-    tokenValue :: Value
-    tokenValue = Value.singleton (aCurrency auction) (aToken auction) 1
+    tokenValue :: Ledger.Value
+    tokenValue = anchorValue $ aAnchor auction -- Value.singleton (aCurrency auction) (aToken auction) 1
 
     correctInputValue :: Bool
     correctInputValue = inVal == case adHighestBid ad of
@@ -175,7 +178,7 @@ mkAuctionValidator ad redeemer ctx =
     correctCloseSlotRange :: Bool
     correctCloseSlotRange = from (aDeadline auction) `contains` txInfoValidRange info
 
-    getsValue :: PaymentPubKeyHash -> Value -> Bool
+    getsValue :: PubKeyHash -> Ledger.Value -> Bool
     getsValue h v =
       let
         [o] = [ o'

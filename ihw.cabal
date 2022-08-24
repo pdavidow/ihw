@@ -25,11 +25,11 @@ library
   exposed-modules:   Anchor
                      , Auction.Offchain
                      , Auction.Onchain
-                     , Auction.PayoutReport
+                    --  , Auction.PayoutReport
                      , Auction.Share
-                     , Auction.TypesAuctionRedeemer
-                     , Auction.Utility
-                     , Auction.ValidateBid    
+                    --  , Auction.TypesAuctionRedeemer
+                    --  , Auction.Utility
+                    --  , Auction.ValidateBid    
                      , CompanyAddress     
                      , CompanyFee                                        
                      , Duration   

@@ -5,6 +5,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
@@ -37,6 +38,8 @@ import qualified PlutusTx
 import           PlutusTx.Prelude 
 import qualified Prelude as P   
 import           Schema (ToSchema)
+
+import           Anchor
 
 
 data Auction = Auction
@@ -85,13 +88,6 @@ data AuctionDatum = AuctionDatum
 
 PlutusTx.unstableMakeIsData ''AuctionDatum
 PlutusTx.makeLift ''AuctionDatum
-
-
-data AuctionAction = MkBid Bid | Close
-    deriving P.Show
-
-PlutusTx.unstableMakeIsData ''AuctionAction
-PlutusTx.makeLift ''AuctionAction
 
 
 data StartParams = StartParams
