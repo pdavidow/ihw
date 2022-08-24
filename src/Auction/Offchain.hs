@@ -94,6 +94,9 @@ bid BidParams{..} = do
         throwError $ T.pack $ printf "bid lower than minimal bid %d" $ minBid d
   
     pkh <- ownPubKeyHash
+
+    unless (isBidderRegistered pkh $ aBidders adAuction) $
+        throwError $ T.pack $ printf "bidder not registered %s" $ show pkh
  
     let b  = Bid {bBidder = pkh, bBid = bpBid}
         d' = d {adHighestBid = Just b}
