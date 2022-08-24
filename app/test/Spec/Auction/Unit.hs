@@ -3,7 +3,7 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Spec.Unit
+module Spec.Auction.Unit
     ( tests
     ) where
 

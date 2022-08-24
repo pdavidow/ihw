@@ -84,7 +84,12 @@ test-suite spectests
   type:                exitcode-stdio-1.0
   main-is:             Spec.hs
   hs-source-dirs:      app/test
-  other-modules:       Spec.Unit
+  other-modules:       Spec.Auction.Unit
+                       , Spec.NaturalNumber
+                       , Spec.PosRational
+                       , Spec.PosProperRational
+                       , Spec.PosValue
+                       , Spec.Utility  
  
 
   default-language:    Haskell2010
