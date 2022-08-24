@@ -28,13 +28,9 @@ import qualified PlutusTx
 import           Ledger.Value ( assetClassValue, assetClassValueOf ) 
 import qualified Plutus.Contracts.Currency as Currency
 
-import           Anchor ( Anchor(..), anchorTokenName, anchorAsset, anchorValue ) 
-import           Auction.Onchain
-                   
-import           Auction.Types
-import           Auction.TypesAuctionRedeemer 
-import           Auction.Utility ( bidErrorToText, bidVal, toHighestLosing ) 
-import           Duration
+import           Anchor
+import           Auction.Onchain                   
+import           Auction.Share
 
 
 type AuctionSchema =
@@ -148,32 +144,6 @@ close CloseParams{..} = do
                                     Constraints.mustPayToPubKey seller (Ada.lovelaceValueOf bBid)              <>
                                     Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
                                     Constraints.mustSpendScriptOutput oref r
-    -- let lookups = 
-    --         Constraints.typedValidatorLookups (typedValidator paramCompanyAddress) <>
-    --         Constraints.otherScript (mkMyScript paramCompanyAddress) <>            
-    --         Constraints.unspentOutputs (Map.singleton oref o)
-
-    -- logInfo @String $ printf "adHighestSubmit %s" $ show adHighestSubmit
-    -- let txC = case adHighestSubmit of
-    --         Nothing ->           
-    --             Constraints.mustValidateIn (from adDeadline) <>              
-    --             Constraints.mustSpendScriptOutput oref redeemer <>
-    --             Constraints.mustPayToPubKey adSeller adAsset       
-    --                 where redeemer = Redeemer $ PlutusTx.toBuiltinData AuctionEndedWinnerNo         
-                
-    --         Just w@(_, winner) ->
-    --             Constraints.mustValidateIn (from adDeadline) <>
-    --             Constraints.mustSpendScriptOutput oref redeemer <>
-    --             Constraints.mustPayToPubKey adSeller prvNetSellerCredit <>
-    --             Constraints.mustPayToPubKey winner (adAsset <> winnerBidCredit) <>
-    --             Constraints.mustPayToPubKey paramCompanyAddress prvCompanyFeeCredit                        
-    --                 where
-    --                 reportI = mkPayoutReportI companyFee adIsPayHighestLosing w adHighestLosingSubmit
-    --                 reportV = toV adBidAssetClass reportI
-    --                 PayoutReportV{..} = reportV
-    --                 redeemer = mkRedeemerAuctionEndedWinnerYes reportI
-    --                 winnerBidCredit = fromMaybe mempty prvWinnerBidCredit                      
-
 
     ledgerTx <- submitTxConstraintsWith lookups txC
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
