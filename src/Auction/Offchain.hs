@@ -52,7 +52,7 @@ start :: StartParams -> Contract (Last Anchor) AuctionSchema T.Text ()
 start StartParams{..} = do         
     pkh <- ownPubKeyHash
     anchor <- mintAnchor           
-
+ 
     let a = Auction
             { aSeller   = pkh
             , aDeadline = spDeadline
@@ -60,12 +60,14 @@ start StartParams{..} = do
             , aCurrency = spCurrency
             , aToken    = spToken
             }
-
+ 
     let d = AuctionDatum
             { adAuction    = a
             , adHighestBid = Nothing
             }
-
+ 
+    -- let v = mempty 
+    -- let v = anchorValue anchor <> Ada.lovelaceValueOf minLovelace
     let v = anchorValue anchor <> auctionedTokenValue a <> Ada.lovelaceValueOf minLovelace
 
     let tx = Constraints.mustPayToTheScript (PlutusTx.toBuiltinData d) v
@@ -116,7 +118,7 @@ bid BidParams{..} = do
 
 
 close :: CloseParams -> Contract w AuctionSchema T.Text ()
-close CloseParams{..} = do
+close CloseParams{..} = do         
     mbX <- findViaAnchor cpAnchor
     (oref, o, d@AuctionDatum{..}) <- case mbX of
         Nothing -> do
@@ -124,7 +126,9 @@ close CloseParams{..} = do
             logError e
             throwError e
         Just x -> pure x
-    logInfo @String $ printf "found auction utxo with datum %s" (show d)                
+    logInfo @String $ printf "found auction utxo with datum %s" (show d)         
+
+    void $ awaitTime $ aDeadline adAuction             
 
     let t      = auctionedTokenValue adAuction
         r      = Redeemer $ PlutusTx.toBuiltinData Close

@@ -60,7 +60,8 @@ walletBidderC   = w5
 walletBidderD   = w6 
 walletBidderE   = w7 
 walletBidderF   = w8 
-walletGraveyard = w9 
+walletCloser    = w9
+walletGraveyard = w10
 
 
 slotCfg :: SlotConfig
@@ -77,16 +78,19 @@ emCfg = Trace.EmulatorConfig (Left dist) def def
             , (walletBidderC, Ada.lovelaceValueOf 1_000_000_000)    
             , (walletBidderD, Ada.lovelaceValueOf 1_000_000_000)       
             , (walletBidderE, Ada.lovelaceValueOf 1_000_000_000)     
-            , (walletBidderF, Ada.lovelaceValueOf 1_000_000_000)                                                                                                 
+            , (walletBidderF, Ada.lovelaceValueOf 1_000_000_000)      
+            , (walletCloser,  Ada.lovelaceValueOf 1_000_000_000)                                                                                                          
             ]  
 
 
 tokenCurrency :: Value.CurrencySymbol
-tokenCurrency = Value.CurrencySymbol $ PlutusTx.toBuiltin $ Crypto.hashToBytes $ Crypto.hashWith @Crypto.Blake2b_256 id "ffff"
+-- tokenCurrency = Value.CurrencySymbol $ PlutusTx.toBuiltin $ Crypto.hashToBytes $ Crypto.hashWith @Crypto.Blake2b_256 id "ffff"
+tokenCurrency = adaSymbol 
 
 
 tokenName :: TokenName
-tokenName = "token"
+-- tokenName = "token"
+tokenName = adaToken 
 
 
 getAnchor :: Trace.ContractHandle (Last Anchor) AuctionSchema T.Text -> Trace.EmulatorTrace Anchor
@@ -111,9 +115,10 @@ tests = testGroup "Auction unit"
         .&&. walletFundsChange walletSeller mempty                     
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
+            hCloser <- Trace.activateContractWallet walletCloser endpoints  
 
             let startParams = StartParams 
-                    { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000
+                    { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
                     , spMinBid   = 100_000_000
                     , spCurrency = tokenCurrency
                     , spToken    = tokenName                   
@@ -127,11 +132,11 @@ tests = testGroup "Auction unit"
                     , cpAnchor = anchor
                     }
 
-            void $ Trace.waitNSlots 10              
-            Trace.callEndpoint @"close" hSeller closeParams       
+            void $ Trace.waitNSlots 10             
+            Trace.callEndpoint @"close" hCloser closeParams       
 
             void $ Trace.waitUntilTime $ spDeadline startParams    
-            void $ Trace.waitNSlots 10    
+            void $ Trace.waitNSlots 10
 
 
 --     , checkPredicateOptions

@@ -13,11 +13,11 @@ import qualified Spec.PosProperRational
 import qualified Spec.PosValue
 
 
--- main :: IO ()
--- main = defaultMain tests
-
 main :: IO ()
-main = Spec.Auction.Trace.test1
+main = defaultMain tests
+
+-- main :: IO ()
+-- main = Spec.Auction.Trace.test1
 
 
 tests :: TestTree

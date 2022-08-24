@@ -44,7 +44,7 @@ import           Schema (ToSchema)
 
 import           Lib.NaturalNumber.NatGE1 as N1 ( mkOk, plus, NatGE1(..) )
 import           Lib.PosProperRational as PR ( posTimes, PosProperRational )
-
+    
 
 -- wasteful structure since long CurrencySymbol is unneccesarily repetitive
 -- Alos, should use NEPMAP, and forget about mempty
@@ -94,16 +94,16 @@ total x =
 -- total' :: NE.NonEmpty Equity -> Equity
 -- total' = totalTx . NE.toList 
 
-
+ 
 {-# INLINABLE totalTx #-}
 totalTx :: [Equity] -> Equity
 totalTx x = 
     x    
-        & map unEquity
+        & map unEquity        
         & foldr (Map.unionWith N1.plus) Map.empty
         & Equity        
 
-   
+        
 -------------------------------------------
 instance H.Semigroup Equity where
     e1 <> e2 = total $ NE.fromList [e1, e2]

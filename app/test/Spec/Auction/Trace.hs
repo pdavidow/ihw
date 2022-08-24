@@ -111,7 +111,7 @@ test1 =
         hSeller <- Trace.activateContractWallet walletSeller endpoints          
 
         let startParams = StartParams 
-                { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000
+                { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
                 , spMinBid   = 100_000_000
                 , spCurrency = tokenCurrency
                 , spToken    = tokenName                   
