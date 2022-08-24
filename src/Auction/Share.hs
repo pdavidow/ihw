@@ -1,0 +1,122 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+
+module Auction.Share
+    ( Auction(..)
+    , AuctionAction(..)
+    , AuctionDatum(..)
+    , Bid(..)
+    , BidParams(..)
+    , CloseParams(..)
+    , StartParams(..)
+    , minBid
+    , minLovelace
+    ) 
+    where
+
+import           Data.Aeson (FromJSON, ToJSON)
+import           GHC.Generics (Generic)
+
+import           Ledger 
+import qualified PlutusTx
+import           PlutusTx.Prelude 
+import qualified Prelude as P   
+import           Schema (ToSchema)
+
+
+data Auction = Auction
+    { aSeller   :: !PubKeyHash
+    , aDeadline :: !POSIXTime
+    , aMinBid   :: !Integer
+    , aAnchor   :: !Anchor
+    } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
+
+instance Eq Auction where
+    {-# INLINABLE (==) #-}
+    a == b = (aSeller   a == aSeller   b) &&
+             (aDeadline a == aDeadline b) &&
+             (aMinBid   a == aMinBid   b) &&
+             (aAnchor   a == aAnchor   b) 
+
+PlutusTx.unstableMakeIsData ''Auction
+PlutusTx.makeLift ''Auction
+
+
+data Bid = Bid
+    { bBidder :: !PubKeyHash
+    , bBid    :: !Integer
+    } deriving P.Show
+
+instance Eq Bid where
+    {-# INLINABLE (==) #-}
+    b == c = (bBidder b == bBidder c) &&
+             (bBid    b == bBid    c)
+
+PlutusTx.unstableMakeIsData ''Bid
+PlutusTx.makeLift ''Bid
+
+
+data AuctionAction = MkBid Bid | Close
+    deriving P.Show
+
+PlutusTx.unstableMakeIsData ''AuctionAction
+PlutusTx.makeLift ''AuctionAction
+
+
+data AuctionDatum = AuctionDatum
+    { adAuction    :: !Auction
+    , adHighestBid :: !(Maybe Bid)
+    } deriving P.Show
+
+PlutusTx.unstableMakeIsData ''AuctionDatum
+PlutusTx.makeLift ''AuctionDatum
+
+
+data AuctionAction = MkBid Bid | Close
+    deriving P.Show
+
+PlutusTx.unstableMakeIsData ''AuctionAction
+PlutusTx.makeLift ''AuctionAction
+
+
+data StartParams = StartParams
+    { spDeadline :: !POSIXTime
+    , spMinBid   :: !Integer
+    } deriving (Generic, ToJSON, FromJSON, ToSchema)
+
+
+data BidParams = BidParams
+    { bpBid    :: !Integer
+    , bpAnchor :: !Anchor
+    } deriving (Generic, ToJSON, FromJSON, ToSchema)
+
+
+data CloseParams = CloseParams
+    { cpAnchor :: !Anchor
+    } deriving (Generic, ToJSON, FromJSON, ToSchema)
+
+
+{-# INLINABLE minBid #-}
+minBid :: AuctionDatum -> Integer
+minBid AuctionDatum{..} = case adHighestBid of
+    Nothing      -> aMinBid adAuction
+    Just Bid{..} -> bBid + 1
+
+
+minLovelace :: Integer
+minLovelace = 2000000

@@ -26,7 +26,7 @@ library
                      , Auction.Offchain
                      , Auction.Onchain
                      , Auction.PayoutReport
-                     , Auction.Types
+                     , Auction.Share
                      , Auction.TypesAuctionRedeemer
                      , Auction.Utility
                      , Auction.ValidateBid    

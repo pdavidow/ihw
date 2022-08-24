@@ -49,6 +49,10 @@ import           Auction.Types
 import           Auction.Utility ( info, isCorrectSlotRange, isValuePaidTo )
 
 
+
+---------
+
+
 {-# INLINABLE auctionDatum #-}
 auctionDatum :: TxOut -> (DatumHash -> Maybe Datum) -> Maybe AuctionDatum
 auctionDatum o f = do
@@ -58,12 +62,12 @@ auctionDatum o f = do
 
 
 {-# INLINEABLE typedValidator #-}
-typedValidator :: PubKeyHash -> Scripts.TypedValidator Scripts.Any
+typedValidator :: Scripts.TypedValidator Scripts.Any
 typedValidator = Scripts.unsafeMkTypedValidator . mkMyScript
 
 
 {-# INLINEABLE mkMyScript #-}
-mkMyScript :: PubKeyHash -> Validator
+mkMyScript :: Validator
 mkMyScript x = Ledger.mkValidatorScript $
     $$(PlutusTx.compile [|| validatorParam ||])
         `PlutusTx.applyCode`
@@ -84,13 +88,13 @@ myWrapValidator f d r p = check (f (PlutusTx.unsafeFromBuiltinData d) (PlutusTx.
 
 
 {-# INLINABLE myAddress #-}
-myAddress :: PubKeyHash -> Ledger.Address
+myAddress :: Ledger.Address
 myAddress = scriptAddress . mkMyScript
 
 
 {-# INLINEABLE mkValidator #-}
-mkValidator :: PubKeyHash -> BuiltinData -> BuiltinData -> BuiltinData -> Bool 
-mkValidator paramCompanyAddress rawDatum rawRedeemer rawContext = 
+mkValidator :: BuiltinData -> BuiltinData -> BuiltinData -> Bool 
+mkValidator rawDatum rawRedeemer rawContext = 
     let
         datum = PlutusTx.unsafeFromBuiltinData @AuctionDatum rawDatum
         redeemer = PlutusTx.unsafeFromBuiltinData @AuctionRedeemer rawRedeemer
@@ -162,13 +166,13 @@ mkValidator paramCompanyAddress rawDatum rawRedeemer rawContext =
                 isCreditCompany = isValuePaidTo txi paramCompanyAddress $ LV.assetClassValue (adBidAssetClass datum) companyFeeCredit                  
 
 
-auctionScript :: PubKeyHash -> Plutus.Script
+auctionScript :: Plutus.Script
 auctionScript = Ledger.unValidatorScript . mkMyScript
 
 
-auctionScriptAsShortBs :: PubKeyHash -> SBS.ShortByteString
+auctionScriptAsShortBs :: SBS.ShortByteString
 auctionScriptAsShortBs = SBS.toShort . LB.toStrict . serialise . auctionScript
 
 
-apiAuctionScript :: PubKeyHash -> PlutusScript PlutusScriptV1
+apiAuctionScript :: PlutusScript PlutusScriptV1
 apiAuctionScript = PlutusScriptSerialised . auctionScriptAsShortBs                
