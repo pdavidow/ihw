@@ -107,6 +107,7 @@ tests = testGroup "Auction unit"
 
             Trace.callEndpoint @"start" hSeller startParams   
             anchor <- getAnchor hSeller 
+            
             let closeParams = CloseParams anchor
             void $ Trace.waitNSlots 10              
             Trace.callEndpoint @"close" hSeller closeParams       

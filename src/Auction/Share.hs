@@ -26,6 +26,7 @@ module Auction.Share
     , CloseParams(..)
     , StartParams(..)
     , auctionDatum
+    , auctionedTokenValue
     , minBid
     , minLovelace
     ) 
@@ -47,7 +48,8 @@ data Auction = Auction
     { aSeller   :: !PubKeyHash
     , aDeadline :: !POSIXTime
     , aMinBid   :: !Integer
-    , aAnchor   :: !Anchor
+    , aCurrency :: !CurrencySymbol
+    , aToken    :: !TokenName
     } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
 
 instance Eq Auction where
@@ -55,7 +57,8 @@ instance Eq Auction where
     a == b = (aSeller   a == aSeller   b) &&
              (aDeadline a == aDeadline b) &&
              (aMinBid   a == aMinBid   b) &&
-             (aAnchor   a == aAnchor   b) 
+             (aCurrency a == aCurrency b) &&
+             (aToken    a == aToken    b)
 
 PlutusTx.unstableMakeIsData ''Auction
 PlutusTx.makeLift ''Auction
@@ -94,6 +97,8 @@ PlutusTx.makeLift ''AuctionDatum
 data StartParams = StartParams
     { spDeadline :: !POSIXTime
     , spMinBid   :: !Integer
+    , spCurrency :: !CurrencySymbol
+    , spToken    :: !TokenName    
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 
@@ -103,8 +108,9 @@ data BidParams = BidParams
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 
-data CloseParams = CloseParams -- no newtype
-    { cpAnchor :: !Anchor
+data CloseParams = CloseParams 
+    { cpAnchorGraveyard :: !AnchorGraveyard
+    , cpAnchor :: !Anchor
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 
@@ -121,6 +127,10 @@ auctionDatum o f = do
     dh <- txOutDatum o
     Datum d <- f dh
     PlutusTx.fromBuiltinData d
+
+
+auctionedTokenValue :: Auction -> Value
+auctionedTokenValue x = Value.singleton (aCurrency x) (aToken x) 1
 
 
 minLovelace :: Integer

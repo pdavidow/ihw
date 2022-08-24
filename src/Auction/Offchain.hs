@@ -57,7 +57,8 @@ start StartParams{..} = do
             { aSeller   = pkh
             , aDeadline = spDeadline
             , aMinBid   = spMinBid
-            , aAnchor  = anchor
+            , aCurrency = spCurrency
+            , aToken    = spTokenName
             }
 
     let d = AuctionDatum
@@ -65,15 +66,15 @@ start StartParams{..} = do
             , adHighestBid = Nothing
             }
 
-    let v = anchorValue anchor <> Ada.lovelaceValueOf minLovelace
+    let v = anchorValue anchor <> auctionedTokenValue a <> Ada.lovelaceValueOf minLovelace
 
     let tx = Constraints.mustPayToTheScript (PlutusTx.toBuiltinData d) v
 
     ledgerTx <- submitTxConstraints typedValidator tx       
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
-    tell $ Last $ Just anchor -- broadcasted here, only after tx confirmed
+    tell $ Last $ Just anchor -- broadcasted only after tx confirmed
 
-    logInfo @String $ printf "started auction %s for token %s" (show a) (show v)
+    logInfo @String $ printf "started auction %s for value-with-token %s" (show a) (show v)
 
 
 bid :: BidParams -> Contract w AuctionSchema T.Text ()
@@ -82,16 +83,16 @@ bid BidParams{..} = do
     (oref, o, d@AuctionDatum{..}) <- case mbX of
         Nothing -> throwError "anchor not found" 
         Just x -> pure x
-    logInfo @String $ printf "found auction utxo with datum %s" (show d)        
+    logInfo @String $ printf "found auction utxo with datum %s" $ show d        
 
     when (bpBid < minBid d) $
-        throwError $ T.pack $ printf "bid lower than minimal bid %d" (minBid d)
+        throwError $ T.pack $ printf "bid lower than minimal bid %d" $ minBid d
 
     pkh <- ownPubKeyHash
 
     let b  = Bid {bBidder = pkh, bBid = bpBid}
         d' = d {adHighestBid = Just b}
-        v  = anchorValue bpAnchor <> Ada.lovelaceValueOf (minLovelace + bpBid)
+        v  = anchorValue bpAnchor <> auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + bpBid)
         r  = Redeemer $ PlutusTx.toBuiltinData $ MkBid b
 
         lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
@@ -111,10 +112,7 @@ bid BidParams{..} = do
     ledgerTx <- submitTxConstraintsWith lookups tx
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
 
-    logInfo @String $ printf "made bid of %d lovelace in auction %s for token %s"
-        bpBid
-        (show adAuction)
-        (show bpAnchor)
+    logInfo @String $ printf "made bid of %d lovelace in auction %s" bpBid (show adAuction)
 
 
 close :: CloseParams -> Contract w AuctionSchema T.Text ()
@@ -128,7 +126,7 @@ close CloseParams{..} = do
         Just x -> pure x
     logInfo @String $ printf "found auction utxo with datum %s" (show d)                
 
-    let t      = anchorValue cpAnchor
+    let t      = auctionedTokenValue adAuction
         r      = Redeemer $ PlutusTx.toBuiltinData Close
         seller = aSeller adAuction
 
@@ -148,10 +146,9 @@ close CloseParams{..} = do
 
     ledgerTx <- submitTxConstraintsWith lookups tx
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
+    buryAnchor cpAnchor cpAnchorGraveyard
 
-    logInfo @String $ printf "closed auction %s for token %s"
-        (show adAuction)
-        (show cpAnchor)
+    logInfo @String $ printf "closed auction %s" $ show adAuction
 
  
 mintAnchor :: Contract w AuctionSchema T.Text Anchor
@@ -174,3 +171,17 @@ findViaAnchor anchorSymbol = do
     where
         f :: (ChainIndexTxOut, Plutus.ChainIndex.Tx.ChainIndexTx) -> Bool
         f (o, _) = assetClassValueOf (txOutValue $ toTxOut o) (anchorAsset anchorSymbol) == 1                    
+
+
+buryAnchor :: Anchor -> AnchorGraveyard -> Contract w AuctionSchema T.Text ()
+buryAnchor anchor (AnchorGraveyard pkh) = do  
+    let lookups = 
+            Constraints.typedValidatorLookups typedAuctionValidator <>
+            Constraints.otherScript auctionValidator          
+
+    let txC = Constraints.mustPayToPubKey pkh (anchorValue anchor)           
+    
+    ledgerTx <- submitTxConstraintsWith lookups txC
+    void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
+
+    logInfo @String "ended buryAnchor"
