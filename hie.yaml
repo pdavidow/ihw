@@ -1,0 +1,12 @@
+cradle:
+  cabal:
+
+    - path: "./src"
+      component: "lib:ihw"
+
+    - path: "./app/test/Spec"
+      component: "test:spectests"   
+   
+
+
+      
