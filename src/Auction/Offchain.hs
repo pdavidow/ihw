@@ -8,7 +8,6 @@
 
 module Auction.Offchain
     ( AuctionSchema
-    , cancel
     , endpoints
     )
     where
@@ -50,7 +49,6 @@ import qualified Lib.NEPosValue as NEPV (toValue)
 type AuctionSchema =
         Endpoint "start" (PubKeyHash, AuctionPrep)        
     .\/ Endpoint "bid" (PubKeyHash, Anchor, Bid)
-    .\/ Endpoint "cancel" (PubKeyHash, Anchor, Duration, AnchorGraveyard)
     .\/ Endpoint "scheduleClose" (PubKeyHash, Anchor, CompanyFee, AnchorGraveyard)    
 
 
@@ -153,50 +151,6 @@ bid (paramCompanyAddress, anchor, newBid) = do
             logInfo @String "ended bid" 
 
 
-cancel :: (PubKeyHash, Anchor, Duration, AnchorGraveyard) -> Contract w AuctionSchema T.Text ()
-cancel (paramCompanyAddress, anchor, buffer, graveyard) = do   
-    logInfo @String ""
-    logInfo @String "=============================================================================="
-    logInfo @String "begin 'cancel'"
-    mbX <- findViaAnchor paramCompanyAddress anchor
-    (oref, o, oldDatum@AuctionDatum{..}) <- case mbX of
-        Nothing -> throwError "anchor not found"
-        Just x -> pure x
-    logInfo @String $ printf "found anchor with datum %s" $ show oldDatum        
-
-    self <- ownPubKeyHash  
-
-    when (self /= adSeller) $ throwError "only seller can cancel"
-    unless adIsCancelable $ throwError "auction is not cancelable"
-
-    let lookups = 
-            Constraints.typedValidatorLookups (typedValidator paramCompanyAddress) <>
-            Constraints.otherScript (mkMyScript paramCompanyAddress) <>            
-            Constraints.unspentOutputs (Map.singleton oref o)
-
-    let pBuffer = toPOSIX buffer
-    let redeemer = mkRedeemerCancel pBuffer
-    let contraints = 
-                Constraints.mustValidateIn (to (adDeadline - pBuffer)) <>      
-                Constraints.mustSpendScriptOutput oref redeemer <>
-                Constraints.mustPayToPubKey adSeller adAsset   
-
-    let txC = case adHighestSubmit of
-            Nothing -> 
-                contraints       
-
-            Just (highestBid, highestBidder) ->
-                contraints <>
-                Constraints.mustPayToPubKey highestBidder refund   
-                    where refund = assetClassValue adBidAssetClass highestBid                              
-
-    ledgerTx <- submitTxConstraintsWith lookups txC
-    void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
-
-    buryAnchor paramCompanyAddress anchor graveyard -- todo burnAnchor ?
-    logInfo @String "end cancel" 
-
-
 close :: (PubKeyHash, Anchor, CompanyFee, AnchorGraveyard) -> Contract w AuctionSchema T.Text ()
 close (paramCompanyAddress, anchor, companyFee, graveyard) = do 
     logInfo @String ""
@@ -295,5 +249,4 @@ endpoints =
     $          endpoint @"start" start         
       `select` endpoint @"scheduleClose" scheduleClose 
       `select` endpoint @"bid" bid     
-      `select` endpoint @"cancel" cancel 
 
