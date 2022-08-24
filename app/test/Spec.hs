@@ -19,10 +19,10 @@ main = defaultMain tests
 tests :: TestTree
 tests = testGroup "all tests"
     [ Spec.Auction.Unit.tests
-    , Spec.NaturalNumber.tests
+    -- , Spec.NaturalNumber.tests
     -- , Spec.NEPosValue.tests    
-    , Spec.PosRational.tests
-    , Spec.PosProperRational.tests
-    , Spec.PosValue.tests    
+    -- , Spec.PosRational.tests
+    -- , Spec.PosProperRational.tests
+    -- , Spec.PosValue.tests    
     ]
 

@@ -103,7 +103,7 @@ data BidParams = BidParams
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 
-data CloseParams = CloseParams
+data CloseParams = CloseParams -- no newtype
     { cpAnchor :: !Anchor
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
