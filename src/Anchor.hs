@@ -12,6 +12,7 @@
 
 module Anchor
     ( Anchor(..)
+    , AnchorGraveyard(..)    
     , anchorTokenName
     , anchorAsset
     , anchorValue
@@ -30,6 +31,7 @@ import           Ledger
                     TxInfo,
                     AssetClass,
                     CurrencySymbol,
+                    PubKeyHash, 
                     TokenName,
                     Value )
 import           Ledger.Value
@@ -50,6 +52,15 @@ newtype Anchor = Anchor {unAnchor :: CurrencySymbol}
 
 PlutusTx.makeIsDataIndexed ''Anchor [('Anchor, 0)]
 PlutusTx.makeLift ''Anchor 
+
+
+newtype AnchorGraveyard  = AnchorGraveyard {unAnchorGraveyard :: PubKeyHash}
+    deriving stock (H.Eq, H.Show, Generic)
+    deriving anyclass (ToJSON, FromJSON, ToSchema)    
+    deriving newtype (Eq)
+
+PlutusTx.makeIsDataIndexed ''AnchorGraveyard [('AnchorGraveyard, 0)]
+PlutusTx.makeLift ''AnchorGraveyard 
 
 
 {-# INLINABLE anchorTokenName #-}
