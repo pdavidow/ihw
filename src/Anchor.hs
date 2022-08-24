@@ -31,6 +31,7 @@ import           Ledger
                     TxInfo,
                     AssetClass,
                     CurrencySymbol,
+                    PubKeyHash, 
                     TokenName,
                     Value )
 import           Ledger.Value

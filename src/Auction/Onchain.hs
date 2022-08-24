@@ -135,7 +135,7 @@ mkAuctionValidator ad redeemer ctx =
     auction = adAuction ad
 
     tokenValue :: Ledger.Value
-    tokenValue = anchorValue $ aAnchor auction -- Value.singleton (aCurrency auction) (aToken auction) 1
+    tokenValue = auctionedTokenValue auction
 
     correctInputValue :: Bool
     correctInputValue = inVal == case adHighestBid ad of

@@ -20,7 +20,7 @@ import qualified Data.Map as Map
 import           Data.Monoid                        (Last (..))
 import qualified Data.Text as T
 
-import           Ledger                             (Ada, Slot (..), Value)
+import           Ledger                             (Ada, Slot (..), TokenName, Value)
 import qualified Ledger.Ada                         as Ada
 import           Plutus.Contract                    hiding (currentSlot)
 import           Plutus.Contract.Test               hiding (not)
@@ -52,15 +52,15 @@ import           Utility ( adaAssetClass, companyPkh )
 import           Plutus.V1.Ledger.Ada ( adaSymbol )
 
 
-walletCompany, walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF :: Wallet 
-walletCompany = w1 
-walletSeller  = w2 
-walletBidderA = w3 
-walletBidderB = w4 
-walletBidderC = w5 
-walletBidderD = w6 
-walletBidderE = w7 
-walletBidderF = w8 
+walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF, walletGraveyard :: Wallet 
+walletSeller    = w2 
+walletBidderA   = w3 
+walletBidderB   = w4 
+walletBidderC   = w5 
+walletBidderD   = w6 
+walletBidderE   = w7 
+walletBidderF   = w8 
+walletGraveyard = w9 
 
 
 slotCfg :: SlotConfig
@@ -81,6 +81,14 @@ emCfg = Trace.EmulatorConfig (Left dist) def def
             ]  
 
 
+tokenCurrency :: Value.CurrencySymbol
+tokenCurrency = Value.CurrencySymbol $ PlutusTx.toBuiltin $ Crypto.hashToBytes $ Crypto.hashWith @Crypto.Blake2b_256 id "ffff"
+
+
+tokenName :: TokenName
+tokenName = "token"
+
+
 getAnchor :: Trace.ContractHandle (Last Anchor) AuctionSchema T.Text -> Trace.EmulatorTrace Anchor
 getAnchor h = do
     void $ Trace.waitNSlots 1
@@ -88,6 +96,10 @@ getAnchor h = do
     case l of
         Last Nothing -> Trace.waitNSlots 1 >> getAnchor h
         Last (Just x) -> Extras.logInfo (show x) >> return x
+
+
+anchorGraveyard :: AnchorGraveyard
+anchorGraveyard = AnchorGraveyard $ walletPubKeyHash walletGraveyard 
 
 
 tests :: TestTree
@@ -101,14 +113,20 @@ tests = testGroup "Auction unit"
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
 
             let startParams = StartParams 
-                   { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
-                   , spMinBid   = 100_000_000
-                   }  
+                    { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000
+                    , spMinBid   = 100_000_000
+                    , spCurrency = tokenCurrency
+                    , spToken    = tokenName                   
+                    }  
 
             Trace.callEndpoint @"start" hSeller startParams   
             anchor <- getAnchor hSeller 
-            
-            let closeParams = CloseParams anchor
+
+            let closeParams = CloseParams 
+                    { cpAnchorGraveyard = anchorGraveyard
+                    , cpAnchor = anchor
+                    }
+
             void $ Trace.waitNSlots 10              
             Trace.callEndpoint @"close" hSeller closeParams       
 

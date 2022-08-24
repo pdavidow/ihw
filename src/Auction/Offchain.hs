@@ -58,7 +58,7 @@ start StartParams{..} = do
             , aDeadline = spDeadline
             , aMinBid   = spMinBid
             , aCurrency = spCurrency
-            , aToken    = spTokenName
+            , aToken    = spToken
             }
 
     let d = AuctionDatum

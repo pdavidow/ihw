@@ -36,13 +36,14 @@ import           Data.Aeson (FromJSON, ToJSON)
 import           GHC.Generics (Generic)
 
 import           Ledger 
+import           Ledger.Value as Value
 import qualified PlutusTx
 import           PlutusTx.Prelude 
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
 import           Anchor
-
+     
 
 data Auction = Auction
     { aSeller   :: !PubKeyHash
