@@ -36,9 +36,11 @@ import           Auction.Share
 
 
 type AuctionSchema =
-        Endpoint "start" StartParams
-    .\/ Endpoint "bid"   BidParams
-    .\/ Endpoint "close" CloseParams
+        Endpoint "start"    StartParams
+    .\/ Endpoint "bid"      BidParams
+    .\/ Endpoint "close"    CloseParams
+    .\/ Endpoint "register" RegisterParams
+    .\/ Endpoint "approve"  ApproveParams
 
 
 endpoints :: Contract (Last Anchor) AuctionSchema T.Text ()
@@ -80,6 +82,14 @@ start StartParams{..} = do
     tell $ Last $ Just anchor -- broadcasted only after tx confirmed
 
     logInfo @String $ printf "started auction %s for value-with-token %s" (show a) (show v)
+
+
+register :: RegisterParams -> Contract w AuctionSchema T.Text ()
+register RegisterParams{..} = undefined
+
+
+approve :: ApproveParams -> Contract w AuctionSchema T.Text ()
+approve ApproveParams{..} = undefined
 
 
 bid :: BidParams -> Contract w AuctionSchema T.Text ()

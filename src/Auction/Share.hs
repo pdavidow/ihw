@@ -18,7 +18,8 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Auction.Share
-    ( Auction(..)
+    ( ApproveParams(..)
+    , Auction(..)
     , AuctionAction(..)
     , AuctionDatum(..)
     , Bid(..)
@@ -26,6 +27,7 @@ module Auction.Share
     , BidderState(..)
     , BidParams(..)
     , CloseParams(..)
+    , RegisterParams(..)
     , StartParams(..)
     , auctionDatum
     , auctionedTokenValue
@@ -128,6 +130,17 @@ data StartParams = StartParams
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
  
+data RegisterParams = RegisterParams -- no newtype
+    { rpAnchor :: !Anchor
+    } deriving (Generic, ToJSON, FromJSON, ToSchema)
+
+
+data ApproveParams = ApproveParams
+    { apApprovals :: ![PubKeyHash]
+    , apAnchor :: !Anchor
+    } deriving (Generic, ToJSON, FromJSON, ToSchema)
+
+
 data BidParams = BidParams
     { bpBid    :: !Integer
     , bpAnchor :: !Anchor
