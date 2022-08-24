@@ -54,7 +54,7 @@ import           Plutus.V1.Ledger.Ada ( adaSymbol )
 
 walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF, walletGraveyard :: Wallet 
 walletSeller    = w2 -- W7ce812d
-walletBidderA   = w3 
+walletBidderA   = w3 -- Wc30efb7
 walletBidderB   = w4 
 walletBidderC   = w5 
 walletBidderD   = w6 
@@ -99,6 +99,10 @@ minAda :: Value
 minAda = Ada.lovelaceValueOf minLovelace
 
 
+lowestAcceptableBid :: Integer
+lowestAcceptableBid = 100_000_000
+
+
 getAnchor :: Trace.ContractHandle (Last Anchor) AuctionSchema T.Text -> Trace.EmulatorTrace Anchor
 getAnchor h = do
     void $ Trace.waitNSlots 1
@@ -124,7 +128,7 @@ tests = testGroup "Auction unit"
 
             let startParams = StartParams 
                     { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
-                    , spMinBid   = 100_000_000
+                    , spMinBid   = lowestAcceptableBid
                     , spCurrency = tokenCurrency
                     , spToken    = tokenName                   
                     }  
@@ -155,7 +159,7 @@ tests = testGroup "Auction unit"
 
             let startParams = StartParams 
                     { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
-                    , spMinBid   = 100_000_000
+                    , spMinBid   = lowestAcceptableBid
                     , spCurrency = tokenCurrency
                     , spToken    = tokenName                   
                     }  
@@ -179,5 +183,44 @@ tests = testGroup "Auction unit"
             Trace.callEndpoint @"close" hSeller closeParams       
 
             void $ Trace.waitUntilTime $ spDeadline startParams    
-            void $ Trace.waitNSlots 3          
+            void $ Trace.waitNSlots 3         
+
+
+    ,  checkPredicateOptions
+        (defaultCheckOptions & (emulatorConfig .~ emCfg))
+        "1 bid at minimal bid"
+        ( assertNoFailedTransactions    
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf lowestAcceptableBid <> inv theTokenVal)   
+        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf lowestAcceptableBid) <> theTokenVal)                            
+        ) $ do
+            hSeller <- Trace.activateContractWallet walletSeller endpoints          
+            hBidderA <- Trace.activateContractWallet walletBidderA endpoints
+
+            let startParams = StartParams 
+                    { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
+                    , spMinBid   = lowestAcceptableBid
+                    , spCurrency = tokenCurrency
+                    , spToken    = tokenName                   
+                    }  
+            Trace.callEndpoint @"start" hSeller startParams   
+            anchor <- getAnchor hSeller 
+
+            void $ Trace.waitNSlots 10 
+
+            let bidParams = BidParams
+                    { bpBid    = spMinBid startParams
+                    , bpAnchor = anchor
+                    }
+            Trace.callEndpoint @"bid" hBidderA bidParams  
+
+            void $ Trace.waitNSlots 10      
+
+            let closeParams = CloseParams 
+                    { cpAnchorGraveyard = anchorGraveyard
+                    , cpAnchor = anchor
+                    }                  
+            Trace.callEndpoint @"close" hSeller closeParams       
+
+            void $ Trace.waitUntilTime $ spDeadline startParams    
+            void $ Trace.waitNSlots 3              
     ]

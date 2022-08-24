@@ -156,7 +156,7 @@ mkAuctionValidator ad redeemer ctx =
 
     correctBidOutputValue :: Integer -> Bool
     correctBidOutputValue amount =
-        txOutValue ownOutput == tokenValue <> Ada.lovelaceValueOf (minLovelace + amount)
+        txOutValue ownOutput == anchorValue (adAnchor ad) <> tokenValue <> Ada.lovelaceValueOf (minLovelace + amount)
 
     correctBidRefund :: Bool
     correctBidRefund = case adHighestBid ad of
