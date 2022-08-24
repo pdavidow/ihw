@@ -103,7 +103,7 @@ totalTx x =
         & foldr (Map.unionWith N1.plus) Map.empty
         & Equity        
 
-
+   
 -------------------------------------------
 instance H.Semigroup Equity where
     e1 <> e2 = total $ NE.fromList [e1, e2]
