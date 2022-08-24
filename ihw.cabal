@@ -1,0 +1,118 @@
+Cabal-Version:      2.4
+Name:               ihw
+Version:            0.1.0.0
+Build-Type:         Simple
+
+
+common base
+  build-depends: base >= 4.14 && < 4.15
+
+common project-config
+  default-language:     Haskell2010
+
+  default-extensions:   NoImplicitPrelude
+                        OverloadedStrings
+
+  ghc-options:          -Wall
+                        -Wcompat
+                        -Wincomplete-record-updates
+                        -Wincomplete-uni-patterns
+                        -Wpartial-fields
+                        -Wredundant-constraints
+                        -Wunused-packages
+
+library
+  exposed-modules:   Anchor
+                     , Auction.Offchain
+                     , Auction.Onchain
+                     , Auction.PayoutReport
+                     , Auction.Types
+                     , Auction.TypesAuctionRedeemer
+                     , Auction.Utility
+                     , Auction.ValidateBid    
+                     , CompanyAddress     
+                     , CompanyFee                                        
+                     , Duration   
+                     , Equity                      
+                     , Lib.NaturalNumber.Extra
+                     , Lib.NaturalNumber.NatGE0
+                     , Lib.NaturalNumber.NatGE1
+                     , Lib.NEPosValue                                                        
+                     , Lib.Pkh
+                     , Lib.PosRational
+                     , Lib.PosProperRational
+                     , Lib.PosValue  
+                     , PercentTimesTen                                    
+                     , Utility
+
+  build-depends:       aeson
+                     , base ^>=4.14.1.0
+                     , base16-bytestring
+                     , binary
+                     , bech32
+                     , cardano-crypto-class
+                     , containers
+                     , bytestring
+                     , data-default
+                     , deepseq
+                     , dlist       
+                     , either            
+                     , freer-extras
+                     , lens
+                     , nonempty-containers
+                     , playground-common
+                     , plutus-contract
+                     , plutus-chain-index
+                     , plutus-core
+                     , plutus-ledger
+                     , plutus-ledger-api
+                     , plutus-tx-plugin
+                     , plutus-tx
+                     , plutus-use-cases
+                     , prettyprinter
+                     , semigroups
+                     , tagged
+                     , text
+                     , serialise
+                     , cardano-api
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -Wall -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas -fno-strictness -fno-spec-constr -fno-specialise
+
+
+test-suite spectests
+  type:                exitcode-stdio-1.0
+  main-is:             Spec.hs
+  hs-source-dirs:      app/test
+  other-modules:       Spec.Auction.Unit
+                       , Spec.NaturalNumber
+                       , Spec.PosRational
+                       , Spec.PosProperRational
+                       , Spec.PosValue
+                       , Spec.Utility  
+ 
+
+  default-language:    Haskell2010
+  ghc-options:         -Wall -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
+  build-depends:       base >= 4.9 && < 5
+                     , cardano-crypto-class
+                     , containers
+                     , data-default
+                     , foldl
+                     , freer-extras   
+                     , freer-simple    
+                     , HUnit          
+                     , ihw
+                     , lens
+                     , plutus-contract
+                     , plutus-ledger
+                     , plutus-ledger-api
+                     , plutus-tx
+                     , prettyprinter
+                     , QuickCheck
+                     , streaming
+                     , tasty
+                     , tasty-hunit
+                     , tasty-quickcheck
+                     , text
+
