@@ -3,7 +3,6 @@ Name:               ihw
 Version:            0.1.0.0
 Build-Type:         Simple
 
-
 common base
   build-depends: base >= 4.14 && < 4.15
 
@@ -25,25 +24,7 @@ library
   exposed-modules:   Anchor
                      , Auction.Offchain
                      , Auction.Onchain
-                    --  , Auction.PayoutReport
                      , Auction.Share
-                    --  , Auction.TypesAuctionRedeemer
-                    --  , Auction.Utility
-                    --  , Auction.ValidateBid    
-                     , CompanyAddress     
-                     , CompanyFee                                        
-                     , Duration   
-                     , Equity                      
-                     , Lib.NaturalNumber.Extra
-                     , Lib.NaturalNumber.NatGE0
-                     , Lib.NaturalNumber.NatGE1
-                     , Lib.NEPosValue                                                        
-                     , Lib.Pkh
-                     , Lib.PosRational
-                     , Lib.PosProperRational
-                     , Lib.PosValue  
-                     , PercentTimesTen                                    
-                     , Utility
 
   build-depends:       aeson
                      , base ^>=4.14.1.0
@@ -86,11 +67,6 @@ test-suite spectests
   hs-source-dirs:      app/test
   other-modules:       Spec.Auction.Unit
                        , Spec.Auction.Trace
-                       , Spec.NaturalNumber
-                       , Spec.PosRational
-                       , Spec.PosProperRational
-                       , Spec.PosValue
-                       , Spec.Utility  
  
 
   default-language:    Haskell2010

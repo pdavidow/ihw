@@ -46,10 +46,6 @@ import           Test.Tasty.QuickCheck              (testProperty)
 import           Anchor
 import           Auction.Offchain 
 import           Auction.Share
-import           Duration
-
-import           Utility ( adaAssetClass, companyPkh )
-import           Plutus.V1.Ledger.Ada ( adaSymbol )
 
 import           Plutus.Contract.Test
 import qualified Plutus.Trace.Emulator as Trace

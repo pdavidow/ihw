@@ -46,10 +46,6 @@ import           Test.Tasty.QuickCheck              (testProperty)
 import           Anchor
 import           Auction.Offchain 
 import           Auction.Share
-import           Duration
-
-import           Utility ( adaAssetClass, companyPkh )
-import           Plutus.V1.Ledger.Ada ( adaSymbol )
 
 
 walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF, walletGraveyard :: Wallet 
@@ -60,7 +56,6 @@ walletBidderC   = w5
 walletBidderD   = w6 
 walletBidderE   = w7 
 walletBidderF   = w8
--- walletCloser    = w9
 walletGraveyard = w10
 
 
@@ -78,8 +73,7 @@ emCfg = Trace.EmulatorConfig (Left dist) def def
             , (walletBidderC, Ada.lovelaceValueOf 1_000_000_000)    
             , (walletBidderD, Ada.lovelaceValueOf 1_000_000_000)       
             , (walletBidderE, Ada.lovelaceValueOf 1_000_000_000)     
-            , (walletBidderF, Ada.lovelaceValueOf 1_000_000_000)      
-            -- , (walletCloser,  Ada.lovelaceValueOf 1_000_000_000)                                                                                                          
+            , (walletBidderF, Ada.lovelaceValueOf 1_000_000_000)                                                                                                            
             ]  
 
 
@@ -93,10 +87,6 @@ tokenName = "token"
 
 theTokenVal :: Value
 theTokenVal = Value.singleton tokenCurrency tokenName 1
-
-
-minAda :: Value
-minAda = Ada.lovelaceValueOf minLovelace
 
 
 lowestAcceptableBid :: Integer
