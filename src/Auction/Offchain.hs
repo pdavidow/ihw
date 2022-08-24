@@ -20,6 +20,7 @@ import qualified Data.Text as T
 import           Text.Printf (printf)
 
 import           Ledger
+import           Ledger.Ada           as Ada
 import qualified Ledger.Constraints as Constraints
 
 import           Plutus.ChainIndex.Tx ( ChainIndexTx(_citxData) )
@@ -68,7 +69,7 @@ start StartParams{..} = do
 
     let tx = Constraints.mustPayToTheScript (PlutusTx.toBuiltinData d) v
 
-    ledgerTx <- submitTxConstraints typedValidator) tx       
+    ledgerTx <- submitTxConstraints typedAuctionValidator tx       
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
     tell $ Last $ Just anchor -- broadcasted here, only after tx confirmed
 
@@ -84,7 +85,7 @@ bid BidParams{..} = do
     logInfo @String $ printf "found auction utxo with datum %s" (show d)        
 
     when (bpBid < minBid d) $
-        throwError $ pack $ printf "bid lower than minimal bid %d" (minBid d)
+        throwError $ T.pack $ printf "bid lower than minimal bid %d" (minBid d)
 
     pkh <- ownPubKeyHash
 
@@ -131,8 +132,8 @@ close CloseParams{..} = do
         r      = Redeemer $ PlutusTx.toBuiltinData Close
         seller = aSeller adAuction
 
-        lookups = Constraints.typedValidatorLookups typedAuctionValidator P.<>
-                  Constraints.otherScript auctionValidator                P.<>
+        lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
+                  Constraints.otherScript auctionValidator                <>
                   Constraints.unspentOutputs (Map.singleton oref o)
 
         tx      = case adHighestBid of
@@ -145,7 +146,7 @@ close CloseParams{..} = do
                                     Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
                                     Constraints.mustSpendScriptOutput oref r
 
-    ledgerTx <- submitTxConstraintsWith lookups txC
+    ledgerTx <- submitTxConstraintsWith lookups tx
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
 
     logInfo @String $ printf "closed auction %s for token %s"
@@ -166,7 +167,7 @@ mintAnchor = do
 
 findViaAnchor :: Anchor -> Contract w s T.Text (Maybe (TxOutRef, ChainIndexTxOut, AuctionDatum))
 findViaAnchor anchorSymbol = do
-    utxos <- Map.filter f <$> utxosTxOutTxAt myAddress
+    utxos <- Map.filter f <$> utxosTxOutTxAt $ scriptHashAddress auctionHash
     pure $ case Map.toList utxos of
         [(oref, (o, citx))] -> (oref, o,) <$> auctionDatum (toTxOut o) (\dh -> Map.lookup dh $ _citxData citx)
         _ -> Nothing

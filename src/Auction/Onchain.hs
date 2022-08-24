@@ -165,7 +165,7 @@ mkAuctionValidator ad redeemer ctx =
           let
             os = [ o
                  | o <- txInfoOutputs info
-                 , txOutAddress o == pubKeyHashAddress bBidder Nothing
+                 , txOutAddress o == pubKeyHashAddress bBidder 
                  ]
           in
             case os of
@@ -186,7 +186,7 @@ mkAuctionValidator ad redeemer ctx =
               , txOutValue o' == v
               ]
       in
-        txOutAddress o == pubKeyHashAddress h Nothing
+        txOutAddress o == pubKeyHashAddress h 
 
 ---------
 

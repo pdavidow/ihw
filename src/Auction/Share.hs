@@ -25,6 +25,7 @@ module Auction.Share
     , BidParams(..)
     , CloseParams(..)
     , StartParams(..)
+    , auctionDatum
     , minBid
     , minLovelace
     ) 
@@ -112,6 +113,14 @@ minBid :: AuctionDatum -> Integer
 minBid AuctionDatum{..} = case adHighestBid of
     Nothing      -> aMinBid adAuction
     Just Bid{..} -> bBid + 1
+
+
+{-# INLINABLE auctionDatum #-}
+auctionDatum :: TxOut -> (DatumHash -> Maybe Datum) -> Maybe AuctionDatum
+auctionDatum o f = do
+    dh <- txOutDatum o
+    Datum d <- f dh
+    PlutusTx.fromBuiltinData d
 
 
 minLovelace :: Integer
