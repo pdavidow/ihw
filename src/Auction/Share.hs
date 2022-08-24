@@ -44,7 +44,7 @@ import           Schema (ToSchema)
 
 import           Anchor
      
-
+ 
 data Auction = Auction
     { aSeller   :: !PubKeyHash
     , aDeadline :: !POSIXTime
@@ -89,6 +89,7 @@ PlutusTx.makeLift ''AuctionAction
 data AuctionDatum = AuctionDatum
     { adAuction    :: !Auction
     , adHighestBid :: !(Maybe Bid)
+    , adAnchor :: !Anchor
     } deriving P.Show
 
 PlutusTx.unstableMakeIsData ''AuctionDatum

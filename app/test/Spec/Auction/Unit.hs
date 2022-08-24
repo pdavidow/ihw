@@ -52,14 +52,14 @@ import           Utility ( adaAssetClass, companyPkh )
 import           Plutus.V1.Ledger.Ada ( adaSymbol )
 
 
-walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF, walletGraveyard :: Wallet 
-walletSeller    = w2 
+walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF, walletCloser, walletGraveyard :: Wallet 
+walletSeller    = w2 -- W7ce812d
 walletBidderA   = w3 
 walletBidderB   = w4 
 walletBidderC   = w5 
 walletBidderD   = w6 
 walletBidderE   = w7 
-walletBidderF   = w8 
+walletBidderF   = w8
 walletCloser    = w9
 walletGraveyard = w10
 
@@ -118,7 +118,7 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "No bid"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (minAda <> theTokenVal)                     
+        .&&. walletFundsChange walletSeller mempty                   
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hCloser <- Trace.activateContractWallet walletCloser endpoints  
@@ -138,7 +138,7 @@ tests = testGroup "Auction unit"
                     , cpAnchor = anchor
                     }
 
-            void $ Trace.waitNSlots 10             
+            void $ Trace.waitNSlots 10            
             Trace.callEndpoint @"close" hCloser closeParams       
 
             void $ Trace.waitUntilTime $ spDeadline startParams    

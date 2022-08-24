@@ -64,6 +64,7 @@ start StartParams{..} = do
     let d = AuctionDatum
             { adAuction    = a
             , adHighestBid = Nothing
+            , adAnchor     = anchor
             }
  
     let v = anchorValue anchor <> auctionedTokenValue a <> Ada.lovelaceValueOf minLovelace
@@ -87,9 +88,9 @@ bid BidParams{..} = do
 
     when (bpBid < minBid d) $
         throwError $ T.pack $ printf "bid lower than minimal bid %d" $ minBid d
-
+  
     pkh <- ownPubKeyHash
-
+ 
     let b  = Bid {bBidder = pkh, bBid = bpBid}
         d' = d {adHighestBid = Just b}
         v  = anchorValue bpAnchor <> auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + bpBid)

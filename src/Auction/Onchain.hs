@@ -130,9 +130,10 @@ mkAuctionValidator ad redeemer ctx =
     tokenValue = auctionedTokenValue auction
 
     correctInputValue :: Bool
-    correctInputValue = inVal == case adHighestBid ad of
-        Nothing      -> tokenValue <> Ada.lovelaceValueOf minLovelace
-        Just Bid{..} -> tokenValue <> Ada.lovelaceValueOf (minLovelace + bBid)
+    correctInputValue = inVal == anchorValue (adAnchor ad) <> 
+        case adHighestBid ad of
+            Nothing      -> tokenValue <> Ada.lovelaceValueOf minLovelace
+            Just Bid{..} -> tokenValue <> Ada.lovelaceValueOf (minLovelace + bBid)
 
     sufficientBid :: Integer -> Bool
     sufficientBid amount = amount >= minBid ad
