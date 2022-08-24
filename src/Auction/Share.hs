@@ -103,7 +103,7 @@ data StartParams = StartParams
     , spToken    :: !TokenName    
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
-
+ 
 data BidParams = BidParams
     { bpBid    :: !Integer
     , bpAnchor :: !Anchor

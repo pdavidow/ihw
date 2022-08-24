@@ -52,7 +52,7 @@ import           Utility ( adaAssetClass, companyPkh )
 import           Plutus.V1.Ledger.Ada ( adaSymbol )
 
 
-walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF, walletCloser, walletGraveyard :: Wallet 
+walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF, walletGraveyard :: Wallet 
 walletSeller    = w2 -- W7ce812d
 walletBidderA   = w3 
 walletBidderB   = w4 
@@ -60,7 +60,7 @@ walletBidderC   = w5
 walletBidderD   = w6 
 walletBidderE   = w7 
 walletBidderF   = w8
-walletCloser    = w9
+-- walletCloser    = w9
 walletGraveyard = w10
 
 
@@ -79,7 +79,7 @@ emCfg = Trace.EmulatorConfig (Left dist) def def
             , (walletBidderD, Ada.lovelaceValueOf 1_000_000_000)       
             , (walletBidderE, Ada.lovelaceValueOf 1_000_000_000)     
             , (walletBidderF, Ada.lovelaceValueOf 1_000_000_000)      
-            , (walletCloser,  Ada.lovelaceValueOf 1_000_000_000)                                                                                                          
+            -- , (walletCloser,  Ada.lovelaceValueOf 1_000_000_000)                                                                                                          
             ]  
 
 
@@ -120,8 +120,7 @@ tests = testGroup "Auction unit"
         ( assertNoFailedTransactions    
         .&&. walletFundsChange walletSeller mempty                   
         ) $ do
-            hSeller <- Trace.activateContractWallet walletSeller endpoints          
-            hCloser <- Trace.activateContractWallet walletCloser endpoints  
+            hSeller <- Trace.activateContractWallet walletSeller endpoints           
 
             let startParams = StartParams 
                     { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
@@ -129,587 +128,56 @@ tests = testGroup "Auction unit"
                     , spCurrency = tokenCurrency
                     , spToken    = tokenName                   
                     }  
-
             Trace.callEndpoint @"start" hSeller startParams   
             anchor <- getAnchor hSeller 
+
+            void $ Trace.waitNSlots 10  
 
             let closeParams = CloseParams 
                     { cpAnchorGraveyard = anchorGraveyard
                     , cpAnchor = anchor
-                    }
-
-            void $ Trace.waitNSlots 10            
-            Trace.callEndpoint @"close" hCloser closeParams       
+                    }          
+            Trace.callEndpoint @"close" hSeller closeParams       
 
             void $ Trace.waitUntilTime $ spDeadline startParams    
-            void $ Trace.waitNSlots 10
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "1 good bid total"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 1)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 9 <> inv theTokenVal)
---         .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf 10) <> theTokenVal)  
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints               
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice nat2
---                     , apBidIncrement = BidIncrement nat1
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestWinningBid 
---                     , apIsCancelable = False                                        
---                     }               
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)  
-
---             void $ Trace.waitNSlots 50
---             let bid = Bid nat10
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 50
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "1 bad bid total: late"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany mempty
---         .&&. walletFundsChange walletSeller mempty 
---         .&&. walletFundsChange walletBidderA mempty         
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints             
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 10_000_000
---                     , apReservePrice = ReservePrice nat2
---                     , apBidIncrement = BidIncrement nat1
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestWinningBid 
---                     , apIsCancelable = False                                         
---                     }          
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)           
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
-
---             void $ Trace.waitNSlots 1 -- need at least one slot to bury anchor, else it will remain in seller's wallet
---             let bid = Bid nat10
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid)      
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "1 bad bid total: below reserve"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany mempty
---         .&&. walletFundsChange walletSeller mempty 
---         .&&. walletFundsChange walletBidderA mempty         
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints              
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice nat10
---                     , apBidIncrement = BidIncrement nat1
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestWinningBid 
---                     , apIsCancelable = False                                         
---                     }   
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)           
-
---             void $ Trace.waitNSlots 1
---             let bid = Bid nat9
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 10            
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "1 good bid total: at reserve"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 1)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 9 <> inv theTokenVal)
---         .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf 10) <> theTokenVal)      
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints             
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice nat10
---                     , apBidIncrement = BidIncrement nat1
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestWinningBid 
---                     , apIsCancelable = False                                         
---                     }           
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)           
-
---             void $ Trace.waitNSlots 1
---             let bid = Bid nat10
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 10              
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "1 good bid total: above reserve, below increment"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 2)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 18 <> inv theTokenVal)
---         .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf 20) <> theTokenVal)      
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints             
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice nat10
---                     , apBidIncrement = BidIncrement nat15
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestWinningBid 
---                     , apIsCancelable = False                                        
---                     }      
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)           
-
---             void $ Trace.waitNSlots 1
---             let bid = Bid nat20
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 10      
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "2 bids total: 1st good; 2nd bad, below increment"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 1)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 9 <> inv theTokenVal)
---         .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf 10) <> theTokenVal)      
---         .&&. walletFundsChange walletBidderB mempty
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints             
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
---             hBidderB <- Trace.activateContractWallet walletBidderB endpoints            
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice nat10
---                     , apBidIncrement = BidIncrement nat3
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestWinningBid 
---                     , apIsCancelable = False                                      
---                     }      
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)            
-
---             void $ Trace.waitNSlots 5
---             let bid1 = Bid nat10
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid1)
-
---             void $ Trace.waitNSlots 5
---             let bid2 = Bid nat12
---             Trace.callEndpoint @"bid" hBidderB (companyPkh, anchor, bid2)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 10     
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "2 good bids total: 2nd above increment"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 2)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 18 <> inv theTokenVal)
---         .&&. walletFundsChange walletBidderA mempty        
---         .&&. walletFundsChange walletBidderB (inv (Ada.lovelaceValueOf 20) <> theTokenVal)      
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints             
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
---             hBidderB <- Trace.activateContractWallet walletBidderB endpoints            
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice nat4
---                     , apBidIncrement = BidIncrement nat6
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestWinningBid 
---                     , apIsCancelable = False                                      
---                     }               
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)             
-
---             void $ Trace.waitNSlots 50
---             let bid1 = Bid nat7 --nat4
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid1)
-
---             void $ Trace.waitNSlots 50
---             let bid2 = Bid nat20
---             Trace.callEndpoint @"bid" hBidderB (companyPkh, anchor, bid2)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 50    
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "2 good bids total: 2nd above increment -- millions of lovelace"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 2_000_000)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 18_000_000 <> inv theTokenVal)
---         .&&. walletFundsChange walletBidderA mempty        
---         .&&. walletFundsChange walletBidderB (inv (Ada.lovelaceValueOf 20_000_000) <> theTokenVal)      
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints              
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
---             hBidderB <- Trace.activateContractWallet walletBidderB endpoints            
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice $ N1.mkOk 4_000_000
---                     , apBidIncrement = BidIncrement $ N1.mkOk 6_000_000
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestWinningBid 
---                     , apIsCancelable = False                                        
---                     }               
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)              
-
---             void $ Trace.waitNSlots 50
---             let bid1 = Bid $ N1.mkOk 7_000_000
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid1)
-
---             void $ Trace.waitNSlots 50
---             let bid2 = Bid $ N1.mkOk 20_000_000
---             Trace.callEndpoint @"bid" hBidderB (companyPkh, anchor, bid2)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 50  
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "1 good bid: winner pays HighestLosingBid"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 1)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 9 <> inv theTokenVal)   
---         .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf 10) <> theTokenVal)      
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints               
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints       
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice nat4
---                     , apBidIncrement = BidIncrement nat6
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestLosingBid 
---                     , apIsCancelable = False                                       
---                     }  
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)              
-
---             void $ Trace.waitNSlots 50
---             let bid1 = Bid nat10
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid1)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 50      
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "2 good bids total: winner pays HighestLosingBid"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 1)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 9 <> inv theTokenVal)
---         .&&. walletFundsChange walletBidderA mempty        
---         .&&. walletFundsChange walletBidderB (inv (Ada.lovelaceValueOf 10) <> theTokenVal)      
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints              
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
---             hBidderB <- Trace.activateContractWallet walletBidderB endpoints            
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice nat4
---                     , apBidIncrement = BidIncrement nat6
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestLosingBid 
---                     , apIsCancelable = False                                        
---                     }     
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)              
-
---             void $ Trace.waitNSlots 50
---             let bid1 = Bid nat10
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid1)
-
---             void $ Trace.waitNSlots 50
---             let bid2 = Bid nat20
---             Trace.callEndpoint @"bid" hBidderB (companyPkh, anchor, bid2)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 50              
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "3 good bids total: winner pays HighestLosingBid"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 1)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 9 <> inv theTokenVal)
---         .&&. walletFundsChange walletBidderA mempty      
---         .&&. walletFundsChange walletBidderB mempty            
---         .&&. walletFundsChange walletBidderC (inv (Ada.lovelaceValueOf 10) <> theTokenVal)      
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints              
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
---             hBidderB <- Trace.activateContractWallet walletBidderB endpoints            
---             hBidderC <- Trace.activateContractWallet walletBidderC endpoints  
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice nat4
---                     , apBidIncrement = BidIncrement nat1
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestLosingBid 
---                     , apIsCancelable = False                                       
---                     }     
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)              
- 
---             void $ Trace.waitNSlots 50
---             let bid1 = Bid nat5
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid1)
-
---             void $ Trace.waitNSlots 50
---             let bid2 = Bid nat10
---             Trace.callEndpoint @"bid" hBidderB (companyPkh, anchor, bid2)
-
---             void $ Trace.waitNSlots 50
---             let bid3 = Bid nat20
---             Trace.callEndpoint @"bid" hBidderC (companyPkh, anchor, bid3)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 50              
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "several bids, last is not highest"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 1_000)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 9_000 <> inv theTokenVal)
---         .&&. walletFundsChange walletBidderA mempty      
---         .&&. walletFundsChange walletBidderB mempty   
---         .&&. walletFundsChange walletBidderC mempty          
---         .&&. walletFundsChange walletBidderD mempty 
---         .&&. walletFundsChange walletBidderE (inv (Ada.lovelaceValueOf 10_000) <> theTokenVal)                 
---         .&&. walletFundsChange walletBidderF mempty                 
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints                
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
---             hBidderB <- Trace.activateContractWallet walletBidderB endpoints            
---             hBidderC <- Trace.activateContractWallet walletBidderC endpoints  
---             hBidderD <- Trace.activateContractWallet walletBidderD endpoints              
---             hBidderE <- Trace.activateContractWallet walletBidderE endpoints   
---             hBidderF <- Trace.activateContractWallet walletBidderF endpoints  
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice $ N1.mkOk 1_000 
---                     , apBidIncrement = BidIncrement $ N1.mkOk 100
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestWinningBid 
---                     , apIsCancelable = False                    
---                     }          
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)              
-
---             void $ Trace.waitNSlots 100
---             let bid1 = Bid $ N1.mkOk 1_003 
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid1)
-
---             void $ Trace.waitNSlots 100
---             let bid2 = Bid $ N1.mkOk 4_000
---             Trace.callEndpoint @"bid" hBidderB (companyPkh, anchor, bid2)
-
---             void $ Trace.waitNSlots 100
---             let bid3 = Bid $ N1.mkOk 9_000
---             Trace.callEndpoint @"bid" hBidderC (companyPkh, anchor, bid3)
-
---             void $ Trace.waitNSlots 100
---             let bid4 = Bid $ N1.mkOk 9_100
---             Trace.callEndpoint @"bid" hBidderD (companyPkh, anchor, bid4)
-
---             void $ Trace.waitNSlots 100
---             let bid5 = Bid $ N1.mkOk 10_000
---             Trace.callEndpoint @"bid" hBidderE (companyPkh, anchor, bid5)
-
---             void $ Trace.waitNSlots 100
---             let bid6 = Bid $ N1.mkOk 9_200
---             Trace.callEndpoint @"bid" hBidderF (companyPkh, anchor, bid6)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 50   
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "several bids, last is not highest, HighestLosingBid"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 910)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 8_190 <> inv theTokenVal)
---         .&&. walletFundsChange walletBidderA mempty      
---         .&&. walletFundsChange walletBidderB mempty   
---         .&&. walletFundsChange walletBidderC mempty          
---         .&&. walletFundsChange walletBidderD mempty 
---         .&&. walletFundsChange walletBidderE (inv (Ada.lovelaceValueOf 9_100) <> theTokenVal)                 
---         .&&. walletFundsChange walletBidderF mempty                 
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints
---             hCompany <- Trace.activateContractWallet walletCompany endpoints              
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
---             hBidderB <- Trace.activateContractWallet walletBidderB endpoints            
---             hBidderC <- Trace.activateContractWallet walletBidderC endpoints  
---             hBidderD <- Trace.activateContractWallet walletBidderD endpoints              
---             hBidderE <- Trace.activateContractWallet walletBidderE endpoints   
---             hBidderF <- Trace.activateContractWallet walletBidderF endpoints  
-
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , apReservePrice = ReservePrice $ N1.mkOk 1_000 
---                     , apBidIncrement = BidIncrement $ N1.mkOk 100
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestLosingBid 
---                     , apIsCancelable = False                    
---                     }          
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hCompany (companyPkh, anchor, companyFee, anchorGraveyard)               
-
---             void $ Trace.waitNSlots 100
---             let bid1 = Bid $ N1.mkOk 1_003 
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid1)
-
---             void $ Trace.waitNSlots 100
---             let bid2 = Bid $ N1.mkOk 4_000
---             Trace.callEndpoint @"bid" hBidderB (companyPkh, anchor, bid2)
-
---             void $ Trace.waitNSlots 100
---             let bid3 = Bid $ N1.mkOk 9_000
---             Trace.callEndpoint @"bid" hBidderC (companyPkh, anchor, bid3)
-
---             void $ Trace.waitNSlots 100
---             let bid4 = Bid $ N1.mkOk 9_100
---             Trace.callEndpoint @"bid" hBidderD (companyPkh, anchor, bid4)
-
---             void $ Trace.waitNSlots 100
---             let bid5 = Bid $ N1.mkOk 10_000
---             Trace.callEndpoint @"bid" hBidderE (companyPkh, anchor, bid5)
-
---             void $ Trace.waitNSlots 100
---             let bid6 = Bid $ N1.mkOk 9_200
---             Trace.callEndpoint @"bid" hBidderF (companyPkh, anchor, bid6)
-
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep
---             void $ Trace.waitNSlots 50              
-
-
---     , checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "Not cancelable, scheduleClose by seller, 1 good Bid, wait until deadline"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletCompany (Ada.lovelaceValueOf 1)
---         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 9 <> inv theTokenVal)
---         .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf 10) <> theTokenVal)                   
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints          
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
-            
---             let auctionPrep = AuctionPrep 
---                     { apAsset = theToken
---                     , apDeadline = TimeSlot.scSlotZeroTime slotCfg + 10_000_000
---                     , apReservePrice = ReservePrice nat2
---                     , apBidIncrement = BidIncrement nat1
---                     , apBidAssetClass = adaAssetClass
---                     , apPaymentStyle = HighestWinningBid 
---                     , apIsCancelable = False                
---                     }    
-
---             Trace.callEndpoint @"start" hSeller (companyPkh, auctionPrep)     
---             anchor <- getAnchor hSeller 
---             Trace.callEndpoint @"scheduleClose" hSeller (companyPkh, anchor, companyFee, anchorGraveyard)           
-
---             void $ Trace.waitNSlots 10
---             let bid = Bid nat10
---             Trace.callEndpoint @"bid" hBidderA (companyPkh, anchor, bid)
-      
---             void $ Trace.waitUntilTime $ apDeadline auctionPrep    
---             void $ Trace.waitNSlots 10               
+            void $ Trace.waitNSlots 3
+
+
+    ,  checkPredicateOptions
+        (defaultCheckOptions & (emulatorConfig .~ emCfg))
+        "1 bid just lower than minimal bid"
+        ( assertNoFailedTransactions    
+        .&&. walletFundsChange walletSeller mempty  
+        .&&. walletFundsChange walletBidderA mempty                           
+        ) $ do
+            hSeller <- Trace.activateContractWallet walletSeller endpoints          
+            hBidderA <- Trace.activateContractWallet walletBidderA endpoints
+
+            let startParams = StartParams 
+                    { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
+                    , spMinBid   = 100_000_000
+                    , spCurrency = tokenCurrency
+                    , spToken    = tokenName                   
+                    }  
+            Trace.callEndpoint @"start" hSeller startParams   
+            anchor <- getAnchor hSeller 
+
+            void $ Trace.waitNSlots 10 
+
+            let bidParams = BidParams
+                    { bpBid    = spMinBid startParams - 1
+                    , bpAnchor = anchor
+                    }
+            Trace.callEndpoint @"bid" hBidderA bidParams  
+
+            void $ Trace.waitNSlots 10      
+
+            let closeParams = CloseParams 
+                    { cpAnchorGraveyard = anchorGraveyard
+                    , cpAnchor = anchor
+                    }                  
+            Trace.callEndpoint @"close" hSeller closeParams       
+
+            void $ Trace.waitUntilTime $ spDeadline startParams    
+            void $ Trace.waitNSlots 3          
     ]

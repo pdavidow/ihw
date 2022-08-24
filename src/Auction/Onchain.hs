@@ -119,7 +119,7 @@ mkAuctionValidator ad redeemer ctx =
         case xs of
             [i] -> i
             _   -> traceError "expected exactly one script input"
-
+ 
     inVal :: Ledger.Value
     inVal = txOutValue . txInInfoResolved $ input
 
