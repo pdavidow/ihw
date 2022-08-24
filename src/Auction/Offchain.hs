@@ -128,7 +128,7 @@ close CloseParams{..} = do
     logInfo @String $ printf "found auction utxo with datum %s" (show d)         
 
     void $ awaitTime $ aDeadline adAuction             
-
+ 
     let t      = auctionedTokenValue adAuction
         r      = Redeemer $ PlutusTx.toBuiltinData Close
         seller = aSeller adAuction

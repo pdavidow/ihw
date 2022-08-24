@@ -190,8 +190,8 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "1 bid at minimal bid"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf lowestAcceptableBid <> inv theTokenVal)   
-        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf lowestAcceptableBid) <> theTokenVal)                            
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace) <> inv theTokenVal)   
+        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace)) <> theTokenVal)                            
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
