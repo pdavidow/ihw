@@ -66,8 +66,6 @@ start StartParams{..} = do
             , adHighestBid = Nothing
             }
  
-    -- let v = mempty 
-    -- let v = anchorValue anchor <> Ada.lovelaceValueOf minLovelace
     let v = anchorValue anchor <> auctionedTokenValue a <> Ada.lovelaceValueOf minLovelace
 
     let tx = Constraints.mustPayToTheScript (PlutusTx.toBuiltinData d) v

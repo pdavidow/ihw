@@ -72,7 +72,7 @@ emCfg :: Trace.EmulatorConfig
 emCfg = Trace.EmulatorConfig (Left dist) def def
     where
         dist = Map.fromList 
-            [ (walletSeller,  Ada.lovelaceValueOf 1_000_000_000)
+            [ (walletSeller,  Ada.lovelaceValueOf 1_000_000_000  <> theTokenVal)
             , (walletBidderA, Ada.lovelaceValueOf 1_000_000_000)
             , (walletBidderB, Ada.lovelaceValueOf 1_000_000_000)
             , (walletBidderC, Ada.lovelaceValueOf 1_000_000_000)    
@@ -84,13 +84,19 @@ emCfg = Trace.EmulatorConfig (Left dist) def def
 
 
 tokenCurrency :: Value.CurrencySymbol
--- tokenCurrency = Value.CurrencySymbol $ PlutusTx.toBuiltin $ Crypto.hashToBytes $ Crypto.hashWith @Crypto.Blake2b_256 id "ffff"
-tokenCurrency = adaSymbol 
+tokenCurrency = Value.CurrencySymbol $ PlutusTx.toBuiltin $ Crypto.hashToBytes $ Crypto.hashWith @Crypto.Blake2b_256 id "ffff"
 
 
 tokenName :: TokenName
--- tokenName = "token"
-tokenName = adaToken 
+tokenName = "token"
+
+
+theTokenVal :: Value
+theTokenVal = Value.singleton tokenCurrency tokenName 1
+
+
+minAda :: Value
+minAda = Ada.lovelaceValueOf minLovelace
 
 
 getAnchor :: Trace.ContractHandle (Last Anchor) AuctionSchema T.Text -> Trace.EmulatorTrace Anchor
@@ -112,7 +118,7 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "No bid"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller mempty                     
+        .&&. walletFundsChange walletSeller (minAda <> theTokenVal)                     
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hCloser <- Trace.activateContractWallet walletCloser endpoints  

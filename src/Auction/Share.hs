@@ -37,7 +37,6 @@ import           GHC.Generics (Generic)
 
 import           Ledger 
 import           Ledger.Value as Value
-import qualified Plutus.V1.Ledger.Value as V
 import qualified PlutusTx
 import           PlutusTx.Prelude 
 import qualified Prelude as P   
@@ -133,7 +132,6 @@ auctionDatum o f = do
 
 auctionedTokenValue :: Auction -> Value
 auctionedTokenValue x = Value.singleton (aCurrency x) (aToken x) 1
--- auctionedTokenValue x = V.singleton (aCurrency x) (aToken x) 1
 
 minLovelace :: Integer
 minLovelace = 2000000
