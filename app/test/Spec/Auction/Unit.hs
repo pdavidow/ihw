@@ -96,11 +96,9 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "No bid"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletCompany mempty
         .&&. walletFundsChange walletSeller mempty                     
         ) $ do
-            hSeller <- Trace.activateContractWallet walletSeller endpoints
-            hCompany <- Trace.activateContractWallet walletCompany endpoints            
+            hSeller <- Trace.activateContractWallet walletSeller endpoints          
 
             let startParams = StartParams 
                    { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
@@ -110,7 +108,8 @@ tests = testGroup "Auction unit"
             Trace.callEndpoint @"start" hSeller startParams   
             anchor <- getAnchor hSeller 
             let closeParams = CloseParams anchor
-            Trace.callEndpoint @"close" hCompany closeParams       
+            void $ Trace.waitNSlots 10              
+            Trace.callEndpoint @"close" hSeller closeParams       
 
             void $ Trace.waitUntilTime $ spDeadline startParams    
             void $ Trace.waitNSlots 10    
