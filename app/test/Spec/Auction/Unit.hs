@@ -257,7 +257,7 @@ tests = testGroup "Auction unit"
             void $ Trace.waitNSlots 5     
 
             let bidParamsB = BidParams
-                    { bpBid    = 150_000_000
+                    { bpBid    = 200_000_000 - 1
                     , bpAnchor = anchor
                     }
             Trace.callEndpoint @"bid" hBidderB bidParamsB 
@@ -278,9 +278,9 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "2 bids higher than min, second higher than first"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (300_000_000 - minLovelace) <> inv theTokenVal)   
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (200_000_001 - minLovelace) <> inv theTokenVal)   
         .&&. walletFundsChange walletBidderA mempty         
-        .&&. walletFundsChange walletBidderB (inv (Ada.lovelaceValueOf (300_000_000 - minLovelace)) <> theTokenVal)             
+        .&&. walletFundsChange walletBidderB (inv (Ada.lovelaceValueOf (200_000_001 - minLovelace)) <> theTokenVal)             
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
@@ -306,7 +306,7 @@ tests = testGroup "Auction unit"
             void $ Trace.waitNSlots 5     
 
             let bidParamsB = BidParams
-                    { bpBid    = 300_000_000
+                    { bpBid    = 200_000_000 + 1
                     , bpAnchor = anchor
                     }
             Trace.callEndpoint @"bid" hBidderB bidParamsB 
@@ -320,5 +320,84 @@ tests = testGroup "Auction unit"
             Trace.callEndpoint @"close" hSeller closeParams       
 
             void $ Trace.waitUntilTime $ spDeadline startParams    
-            void $ Trace.waitNSlots 5                                   
+            void $ Trace.waitNSlots 5    
+
+
+    ,  checkPredicateOptions
+        (defaultCheckOptions & (emulatorConfig .~ emCfg))
+        "5 bids higher than min, each higher than previous"
+        ( assertNoFailedTransactions    
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (100_000_005 - minLovelace) <> inv theTokenVal)   
+        .&&. walletFundsChange walletBidderA mempty         
+        .&&. walletFundsChange walletBidderB mempty 
+        .&&. walletFundsChange walletBidderC mempty 
+        .&&. walletFundsChange walletBidderD mempty                         
+        .&&. walletFundsChange walletBidderE (inv (Ada.lovelaceValueOf (100_000_005 - minLovelace)) <> theTokenVal)             
+        ) $ do
+            hSeller <- Trace.activateContractWallet walletSeller endpoints          
+            hBidderA <- Trace.activateContractWallet walletBidderA endpoints
+            hBidderB <- Trace.activateContractWallet walletBidderB endpoints
+            hBidderC <- Trace.activateContractWallet walletBidderC endpoints
+            hBidderD <- Trace.activateContractWallet walletBidderD endpoints
+            hBidderE <- Trace.activateContractWallet walletBidderE endpoints
+
+            let startParams = StartParams 
+                    { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
+                    , spMinBid   = lowestAcceptableBid
+                    , spCurrency = tokenCurrency
+                    , spToken    = tokenName                   
+                    }  
+            Trace.callEndpoint @"start" hSeller startParams   
+            anchor <- getAnchor hSeller 
+
+            void $ Trace.waitNSlots 5    
+
+            let bidParamsA = BidParams
+                    { bpBid    = 100_000_001
+                    , bpAnchor = anchor
+                    }
+            Trace.callEndpoint @"bid" hBidderA bidParamsA  
+
+            void $ Trace.waitNSlots 5     
+
+            let bidParamsB = BidParams
+                    { bpBid    = 100_000_002
+                    , bpAnchor = anchor
+                    }
+            Trace.callEndpoint @"bid" hBidderB bidParamsB 
+
+            void $ Trace.waitNSlots 5     
+
+            let bidParamsC = BidParams
+                    { bpBid    = 100_000_003
+                    , bpAnchor = anchor
+                    }
+            Trace.callEndpoint @"bid" hBidderC bidParamsC             
+
+            void $ Trace.waitNSlots 5     
+
+            let bidParamsD = BidParams
+                    { bpBid    = 100_000_004
+                    , bpAnchor = anchor
+                    }
+            Trace.callEndpoint @"bid" hBidderD bidParamsD
+            
+            void $ Trace.waitNSlots 5     
+
+            let bidParamsE = BidParams
+                    { bpBid    = 100_000_005
+                    , bpAnchor = anchor
+                    }
+            Trace.callEndpoint @"bid" hBidderE bidParamsE
+
+            void $ Trace.waitNSlots 5    
+
+            let closeParams = CloseParams 
+                    { cpAnchorGraveyard = anchorGraveyard
+                    , cpAnchor = anchor
+                    }                  
+            Trace.callEndpoint @"close" hSeller closeParams       
+
+            void $ Trace.waitUntilTime $ spDeadline startParams    
+            void $ Trace.waitNSlots 5                                              
     ]
