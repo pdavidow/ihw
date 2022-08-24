@@ -22,11 +22,16 @@ module Auction.Share
     , AuctionAction(..)
     , AuctionDatum(..)
     , Bid(..)
+    , Bidders
+    , BidderState(..)
     , BidParams(..)
     , CloseParams(..)
     , StartParams(..)
     , auctionDatum
     , auctionedTokenValue
+    , bidderState
+    , isBidderApproved
+    , isBidderRegistered
     , minBid
     , minLovelace
     ) 
@@ -38,15 +43,34 @@ import           GHC.Generics (Generic)
 import           Ledger 
 import           Ledger.Value as Value
 import qualified PlutusTx
+import qualified PlutusTx.AssocMap as AssocMap
 import           PlutusTx.Prelude 
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
 import           Anchor
      
- 
+
+data BidderState = BidderRegistered | BidderApproved
+    deriving stock (P.Eq, P.Show, Generic)
+    deriving anyclass (ToJSON, FromJSON, ToSchema)
+
+instance Eq BidderState where
+    {-# INLINABLE (==) #-}
+    BidderRegistered == BidderRegistered = True
+    BidderApproved == BidderApproved = True
+    _ == _ = False
+
+PlutusTx.makeIsDataIndexed ''BidderState [('BidderRegistered, 0), ('BidderApproved, 1)]
+PlutusTx.makeLift ''BidderState  
+
+
+type Bidders = AssocMap.Map PubKeyHash BidderState
+
+
 data Auction = Auction
     { aSeller   :: !PubKeyHash
+    , aBidders  :: !Bidders
     , aDeadline :: !POSIXTime
     , aMinBid   :: !Integer
     , aCurrency :: !CurrencySymbol
@@ -134,5 +158,25 @@ auctionDatum o f = do
 auctionedTokenValue :: Auction -> Value
 auctionedTokenValue x = Value.singleton (aCurrency x) (aToken x) 1
 
+
 minLovelace :: Integer
 minLovelace = 2000000
+
+
+bidderState :: PubKeyHash -> Bidders -> Maybe BidderState 
+bidderState = AssocMap.lookup
+
+
+isBidderRegistered :: PubKeyHash -> Bidders -> Bool 
+isBidderRegistered pkh m = 
+    case bidderState pkh m of
+        Nothing -> False 
+        Just x -> x == BidderRegistered
+
+
+isBidderApproved :: PubKeyHash -> Bidders -> Bool 
+isBidderApproved pkh m = 
+    case bidderState pkh m of
+        Nothing -> False 
+        Just x -> x == BidderApproved
+

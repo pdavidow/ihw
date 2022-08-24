@@ -26,6 +26,7 @@ import qualified Ledger.Constraints as Constraints
 import           Plutus.ChainIndex.Tx ( ChainIndexTx(_citxData) )
 import           Plutus.Contract
 import qualified PlutusTx
+import qualified PlutusTx.AssocMap as AssocMap
 import           Ledger.Value ( assetClassValue, assetClassValueOf ) 
 import qualified Plutus.Contracts.Currency as Currency
 
@@ -41,11 +42,13 @@ type AuctionSchema =
 
 
 endpoints :: Contract (Last Anchor) AuctionSchema T.Text ()
-endpoints = awaitPromise (start' `select` bid' `select` close') >> endpoints
+endpoints = awaitPromise (start' `select` bid' `select` close' `select` register' `select` approve') >> endpoints
   where
-    start' = endpoint @"start" start
-    bid'   = endpoint @"bid"   bid
-    close' = endpoint @"close" close
+    start'    = endpoint @"start" start
+    bid'      = endpoint @"bid"   bid
+    close'    = endpoint @"close" close
+    register' = endpoint @"register" register
+    approve'  = endpoint @"approve" approve
 
 
 start :: StartParams -> Contract (Last Anchor) AuctionSchema T.Text ()
@@ -55,6 +58,7 @@ start StartParams{..} = do
  
     let a = Auction
             { aSeller   = pkh
+            , aBidders  = AssocMap.empty
             , aDeadline = spDeadline
             , aMinBid   = spMinBid
             , aCurrency = spCurrency
