@@ -18,13 +18,16 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Auction.Types
-    ( ApproveParams(..)
+    ( AlreadyApproved(..)
+    , ApproveParams(..)
     , Auction(..)
     , Auctioning
     , AuctionAction(..)
     , AuctionDatum(..)
     , Bid(..)
     , Bidders
+    , FitForApproval(..)
+    , NotRegistered(..)
     , Status(..)
     , BidParams(..)
     , CloseParams(..)
@@ -155,26 +158,7 @@ data CloseParams = CloseParams
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 
-{-# INLINABLE minBid #-}
-minBid :: AuctionDatum -> Integer
-minBid AuctionDatum{..} = case adHighestBid of
-    Nothing      -> aMinBid adAuction
-    Just Bid{..} -> bBid + 1
-
-
-{-# INLINABLE auctionDatum #-}
-auctionDatum :: TxOut -> (DatumHash -> Maybe Datum) -> Maybe AuctionDatum
-auctionDatum o f = do
-    dh <- txOutDatum o
-    Datum d <- f dh
-    PlutusTx.fromBuiltinData d
-
-
-auctionedTokenValue :: Auction -> Value
-auctionedTokenValue x = Value.singleton (aCurrency x) (aToken x) 1
-
-
-minLovelace :: Integer
-minLovelace = 2000000
-
-
+newtype FitForApproval = FitForApproval [PubKeyHash] deriving P.Show
+newtype NotRegistered = NotRegistered [PubKeyHash] deriving P.Show
+newtype AlreadyApproved = AlreadyApproved [PubKeyHash] deriving P.Show
+    

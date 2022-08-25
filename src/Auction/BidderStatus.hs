@@ -38,7 +38,6 @@ import           PlutusTx.Prelude
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Anchor
 import           Auction.Share
 import           Auction.Types
 
@@ -59,13 +58,9 @@ registerBidder m pkh =
         Right $ AssocMap.insert pkh Registered m
 
 
-approveBidders :: Bidders -> [PubKeyHash] -> Bidders
-approveBidders = foldr $ \ x acc -> 
-    if isBidderRegistered acc x then 
-        AssocMap.insert x Approved acc
-    else
-        acc
+approveBidders :: Bidders -> FitForApproval -> Bidders
+approveBidders m (FitForApproval xs) = foldr (`AssocMap.insert` Approved) m xs
 
-       
-analyzeApprovees :: [PubKeyHash] -> Bidders -> ([PubKeyHash], [PubKeyHash], [PubKeyHash])
-analyzeApprovees xs m = P.undefined
+
+analyzeApprovees :: Bidders -> [PubKeyHash] -> (FitForApproval, NotRegistered, AlreadyApproved)
+analyzeApprovees m = foldr f (FitForApproval [], NotRegistered [], AlreadyApproved [])
