@@ -93,6 +93,11 @@ mkAuctionValidator ad redeemer ctx =
             traceIfFalse "bidder is seller" (not $ isSeller pkh) &&
             traceIfFalse "bidder already registered" (not $ isBidderAtLeastRegistered pkh)
 
+        Approve sellerPkh fitPkhs ->
+            traceIfFalse "approver is not seller" (isSeller sellerPkh) &&
+            traceIfFalse "empty list" (not $ null fitPkhs) &&
+            traceIfFalse "not all are registered" (isAllRegisterd fitPkhs)
+
         MkBid b@Bid{..} ->
             traceIfFalse "bid too low"        (sufficientBid bBid)         &&
             traceIfFalse "wrong output datum" (correctBidOutputDatum b)    &&
@@ -146,6 +151,10 @@ mkAuctionValidator ad redeemer ctx =
 
     isBidderAtLeastRegistered :: PubKeyHash -> Bool      
     isBidderAtLeastRegistered pkh = AssocMap.member pkh $ aBidders auction
+
+
+    isAllRegisterd :: [PubKeyHash] -> Bool 
+    isAllRegisterd = AssocMap.all (== Registered)
 
     sufficientBid :: Integer -> Bool
     sufficientBid amount = amount >= minBid ad

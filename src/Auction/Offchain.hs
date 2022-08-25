@@ -133,14 +133,28 @@ approve ApproveParams{..} = do
     unless (pkh == aSeller adAuction) $
         throwError $ T.pack $ printf "only seller may approve" 
 
-    let (notRegistered, alreadyApproved, fitForApproval) = h apApprovals $ aBidders adAuction
+    let (fitForApproval, notRegistered, alreadyApproved) = h apApprovals $ aBidders adAuction
     when (null fitForApproval) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
     unless (null notRegistered) $ logInfo @String $ printf "not registered %s" $ show notRegistered
     unless (null alreadyApproved) $ logInfo @String $ printf "already approved %s" $ show alreadyApproved
 
     let bidders' = g fitForApproval $ aBidders adAuction
 
-    pure ()
+    let d' = d {adAuction = adAuction {aBidders = bidders'}}
+        v  = anchorValue apAnchor <> auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid adHighestBid)
+        r  = Redeemer $ PlutusTx.toBuiltinData $ Approve {aaSeller = pkh, aaFit = fitForApproval}
+
+        lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
+                  Constraints.otherScript auctionValidator                <>
+                  Constraints.unspentOutputs (Map.singleton oref o)
+
+        tx      = Constraints.mustPayToTheScript d' v                     <>
+                  Constraints.mustSpendScriptOutput oref r
+
+    ledgerTx <- submitTxConstraintsWith lookups tx
+    void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
+
+    logInfo @String $ printf "approved bidders %s" $ show fitForApproval
 
 
 bid :: BidParams -> Contract w AuctionSchema T.Text ()
