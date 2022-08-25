@@ -98,17 +98,26 @@ register RegisterParams{..} = do
 
     when (pkh == aSeller adAuction) $
         throwError $ T.pack $ printf "seller may not register" 
-  
-    when (AssocMap.member pkh bidders) $
-        throwError $ T.pack $ printf "already registered" 
 
     bidders' <- case registerBidder pkh bidders of
         Left e -> throwError e
         Right x -> pure x
 
     let d' = d {adAuction = adAuction {aBidders = bidders'}}
+        v  = anchorValue rpAnchor <> auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid adHighestBid)
+        r  = Redeemer $ PlutusTx.toBuiltinData $ Register pkh
 
-    pure ()
+        lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
+                  Constraints.otherScript auctionValidator                <>
+                  Constraints.unspentOutputs (Map.singleton oref o)
+
+        tx      = Constraints.mustPayToTheScript d' v                     <>
+                  Constraints.mustSpendScriptOutput oref r
+
+    ledgerTx <- submitTxConstraintsWith lookups tx
+    void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
+
+    logInfo @String $ printf "registered bidder %s" $ show pkh
 
 
 approve :: ApproveParams -> Contract w AuctionSchema T.Text ()
