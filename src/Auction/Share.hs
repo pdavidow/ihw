@@ -107,7 +107,7 @@ PlutusTx.unstableMakeIsData ''Bid
 PlutusTx.makeLift ''Bid
 
 
-data AuctionAction = MkBid Bid | Close | Register PubKeyHash
+data AuctionAction = Register PubKeyHash | MkBid Bid | Close 
     deriving P.Show
 
 PlutusTx.unstableMakeIsData ''AuctionAction

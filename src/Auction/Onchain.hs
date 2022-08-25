@@ -37,6 +37,7 @@ import           Ledger
 import           Ledger.Ada           as Ada
 
 import qualified Plutus.V1.Ledger.Scripts as Plutus
+import qualified PlutusTx.AssocMap as AssocMap
 import           Cardano.Api.Shelley (PlutusScript (..), PlutusScriptV1)
 import qualified Ledger.Typed.Scripts as Scripts
 import qualified Ledger.Value as Value
@@ -88,6 +89,10 @@ mkAuctionValidator ad redeemer ctx =
     traceIfFalse "wrong input value" correctInputValue &&
 
     case redeemer of
+        Register pkh ->
+            traceIfFalse "bidder is seller" (not $ isSeller pkh) &&
+            traceIfFalse "bidder already registered" (not $ isBidderAtLeastRegistered pkh)
+
         MkBid b@Bid{..} ->
             traceIfFalse "bid too low"        (sufficientBid bBid)         &&
             traceIfFalse "wrong output datum" (correctBidOutputDatum b)    &&
@@ -130,10 +135,17 @@ mkAuctionValidator ad redeemer ctx =
     tokenValue = auctionedTokenValue auction
 
     correctInputValue :: Bool
-    correctInputValue = inVal == anchorValue (adAnchor ad) <> 
-        case adHighestBid ad of
-            Nothing      -> tokenValue <> Ada.lovelaceValueOf minLovelace
-            Just Bid{..} -> tokenValue <> Ada.lovelaceValueOf (minLovelace + bBid)
+    correctInputValue = inVal == 
+        anchorValue (adAnchor ad) <> tokenValue <> 
+            case adHighestBid ad of
+                Nothing      -> Ada.lovelaceValueOf minLovelace
+                Just Bid{..} -> Ada.lovelaceValueOf $ minLovelace + bBid
+
+    isSeller :: PubKeyHash -> Bool
+    isSeller pkh = aSeller auction == pkh      
+
+    isBidderAtLeastRegistered :: PubKeyHash -> Bool      
+    isBidderAtLeastRegistered pkh = AssocMap.member pkh $ aBidders auction
 
     sufficientBid :: Integer -> Bool
     sufficientBid amount = amount >= minBid ad
