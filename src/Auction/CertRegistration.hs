@@ -25,14 +25,16 @@ module Auction.CertRegistration
     where
 
 
+import           Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Text as T
-
+import           GHC.Generics (Generic)
+import qualified Data.Text as T
 
 import           Ledger 
 import           Ledger.Value as Value
 import qualified PlutusTx
 import qualified PlutusTx.AssocMap as AssocMap
-import           PlutusTx.Prelude 
+import           PlutusTx.Prelude
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
@@ -40,7 +42,12 @@ import           Auction.BidderStatusUtil
 import           Auction.Synonyms
 
 
-newtype CertRegistration = CertRegistration PubKeyHash deriving P.Show
+newtype CertRegistration = CertRegistration PubKeyHash 
+    deriving stock (P.Eq, P.Ord, P.Show, Generic)
+    deriving anyclass (ToJSON, FromJSON, ToSchema)
+    deriving newtype (Eq, Ord, PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+
+PlutusTx.makeLift ''CertRegistration
 
 
 certifyRegisteree :: BiddersMap -> PubKeyHash -> Either T.Text CertRegistration
@@ -50,5 +57,6 @@ certifyRegisteree m x
   | otherwise = Right $ CertRegistration x
 
 
+{-# INLINABLE pkhFor #-}
 pkhFor :: CertRegistration -> PubKeyHash
 pkhFor (CertRegistration x) = x

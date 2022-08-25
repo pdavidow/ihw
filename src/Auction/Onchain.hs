@@ -53,6 +53,7 @@ import           Auction.Share
 import           Auction.Types
 
 
+data Auctioning
 instance Scripts.ValidatorTypes Auctioning where
     type instance RedeemerType Auctioning = AuctionAction
     type instance DatumType Auctioning = AuctionDatum

@@ -20,7 +20,6 @@
 module Auction.Types
     ( ApproveParams(..)
     , Auction(..)
-    , Auctioning
     , AuctionAction(..)
     , AuctionDatum(..)
     , Bid(..)
@@ -49,9 +48,6 @@ import           Anchor
 import qualified Auction.CertApprovals as CA
 import qualified Auction.CertRegistration as CR
 import           Auction.Synonyms
-
-
-data Auctioning
 
 
 data Auction = Auction
@@ -90,9 +86,9 @@ PlutusTx.makeLift ''Bid
 
 
 data AuctionAction 
-    = Register CR.CertRegistration
-    | Approve {aaSeller :: PubKeyHash, aaFits :: CA.CertApprovals}
-    | MkBid Bid 
+    = Register !CR.CertRegistration
+    | Approve {aaSeller :: !PubKeyHash, aaCerts :: !CA.CertApprovals}
+    | MkBid !Bid 
     | Close 
     deriving P.Show
 
@@ -118,8 +114,8 @@ data StartParams = StartParams
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
  
-data RegisterParams = RegisterParams -- no newtype
-    { rpAnchor :: !Anchor
+newtype RegisterParams = RegisterParams 
+    { rpAnchor :: Anchor
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 

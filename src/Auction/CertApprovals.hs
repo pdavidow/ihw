@@ -40,7 +40,12 @@ import           Auction.Synonyms ( BiddersMap )
 import           Auction.TypesNonCertBidderStatus
 
 
-newtype CertApprovals = CertApprovals [PubKeyHash] deriving P.Show
+newtype CertApprovals = CertApprovals [PubKeyHash] 
+    deriving stock (P.Eq, P.Ord, P.Show, Generic)
+    deriving anyclass (ToJSON, FromJSON, ToSchema)
+    deriving newtype (Eq, Ord, PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+
+PlutusTx.makeLift ''CertApprovals
 
 
 certifyApprovees :: BiddersMap -> [PubKeyHash] -> (CertApprovals, NotRegistereds, AlreadyApproveds)
@@ -48,5 +53,6 @@ certifyApprovees m = foldr f (CertApprovals [], NotRegistereds [], AlreadyApprov
     where f = P.undefined
 
 
+{-# INLINABLE pkhsFor #-}
 pkhsFor :: CertApprovals -> [PubKeyHash]
 pkhsFor (CertApprovals xs) = xs
