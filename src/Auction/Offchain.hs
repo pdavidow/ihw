@@ -31,6 +31,7 @@ import           Ledger.Value ( assetClassValue, assetClassValueOf )
 import qualified Plutus.Contracts.Currency as Currency
 
 import           Anchor
+import           Auction.Bidders 
 import           Auction.Onchain                   
 import           Auction.Share
 
@@ -133,7 +134,7 @@ approve ApproveParams{..} = do
     pkh <- ownPubKeyHash
     unless (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "only seller may approve" 
 -----
-    let (fitForApproval, notRegistered, alreadyApproved) = h apApprovals $ aBidders adAuction
+    let (fitForApproval, notRegistered, alreadyApproved) = analyzeApprovees apApprovals $ aBidders adAuction
     when (null fitForApproval) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
     unless (null notRegistered) $ logInfo @String $ printf "not registered %s" $ show notRegistered
     unless (null alreadyApproved) $ logInfo @String $ printf "already approved %s" $ show alreadyApproved

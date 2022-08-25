@@ -29,14 +29,10 @@ module Auction.Share
     , CloseParams(..)
     , RegisterParams(..)
     , StartParams(..)
-    , approveBidders
     , auctionDatum
     , auctionedTokenValue
-    , isBidderApproved
-    , isBidderRegistered
     , minBid
     , minLovelace
-    , registerBidder
     ) 
     where
 
@@ -182,27 +178,3 @@ minLovelace :: Integer
 minLovelace = 2000000
 
 
-isBidderRegistered :: Bidders -> PubKeyHash -> Bool 
-isBidderRegistered m pkh = maybe False (== Registered) $ AssocMap.lookup pkh m
-
-
-isBidderApproved :: Bidders -> PubKeyHash -> Bool 
-isBidderApproved m pkh = maybe False (== Approved) $ AssocMap.lookup pkh m
-
-
-registerBidder :: Bidders -> PubKeyHash -> Either T.Text Bidders
-registerBidder m pkh =
-    if isBidderApproved m pkh then
-        Left "may not register already approved" 
-    else
-        Right $ AssocMap.insert pkh Registered m
-
-
-approveBidders :: Bidders -> [PubKeyHash] -> Bidders
-approveBidders = foldr $ \ x acc -> 
-    if isBidderRegistered acc x then 
-        AssocMap.insert x Approved acc
-    else
-        acc
-
-       
