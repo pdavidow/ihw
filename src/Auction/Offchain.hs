@@ -92,14 +92,12 @@ register RegisterParams{..} = do
         Just x -> pure x
     logInfo @String $ printf "found auction utxo with datum %s" $ show d        
 
-    let bidders = aBidders adAuction
-
     pkh <- ownPubKeyHash
 
     when (pkh == aSeller adAuction) $
         throwError $ T.pack $ printf "seller may not register" 
 
-    bidders' <- case registerBidder pkh bidders of
+    bidders' <- case registerBidder pkh $ aBidders adAuction of
         Left e -> throwError e
         Right x -> pure x
 
@@ -130,13 +128,19 @@ approve ApproveParams{..} = do
         Just x -> pure x
     logInfo @String $ printf "found auction utxo with datum %s" $ show d        
 
-    let bidders = aBidders adAuction
-
     pkh <- ownPubKeyHash
 
     unless (pkh == aSeller adAuction) $
         throwError $ T.pack $ printf "only seller may approve" 
 
+    let (notRegistered, alreadyApproved, fitForApproval) = h apApprovals $ aBidders adAuction
+    when (null fitForApproval) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
+    unless (null notRegistered) $ logInfo @String $ printf "not registered %s" $ show notRegistered
+    unless (null alreadyApproved) $ logInfo @String $ printf "already approved %s" $ show alreadyApproved
+
+    let bidders' = g fitForApproval $ aBidders adAuction
+
+    pure ()
 
 
 bid :: BidParams -> Contract w AuctionSchema T.Text ()
@@ -250,5 +254,3 @@ buryAnchor anchor (AnchorGraveyard pkh) = do
     
     ledgerTx <- submitTxConstraintsWith lookups txC
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
-
-    logInfo @String "ended buryAnchor"

@@ -23,7 +23,7 @@ module Anchor
 
 import           Data.Aeson (FromJSON, ToJSON)
 import           GHC.Generics (Generic)
-import qualified Prelude as H--askell     
+import qualified Prelude as H--askell -- todo use P instead
 import           Ledger
                     ( ownHash,
                     valueLockedBy,

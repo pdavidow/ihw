@@ -47,6 +47,8 @@ import           Anchor
 import           Auction.Offchain 
 import           Auction.Share
 
+-- todo assertContractError
+-- todo assertInstanceLog
 
 walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF, walletGraveyard :: Wallet 
 walletSeller    = w2 -- W7ce812d
