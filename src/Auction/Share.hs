@@ -203,6 +203,17 @@ isBidderApproved m pkh =
 registerBidder :: PubKeyHash -> Bidders -> Either T.Text Bidders
 registerBidder pkh m =
     if AssocMap.member pkh m then
-        Left "already registered" 
+        Left "already (at least) registered" 
     else
         Right $ AssocMap.insert pkh Registered m
+
+
+approveBidders :: Bidders -> [PubKeyHash] -> Bidders
+approveBidders m xs = foldr f m xs
+    where f = \ x acc -> 
+            if isBidderRegistered x acc then
+                AssocMap.insert x Approved acc
+            else
+                acc
+
+       

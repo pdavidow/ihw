@@ -93,9 +93,7 @@ register RegisterParams{..} = do
     logInfo @String $ printf "found auction utxo with datum %s" $ show d        
 
     pkh <- ownPubKeyHash
-
-    when (pkh == aSeller adAuction) $
-        throwError $ T.pack $ printf "seller may not register" 
+    when (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "seller may not register" 
 
     bidders' <- case registerBidder pkh $ aBidders adAuction of
         Left e -> throwError e
@@ -129,16 +127,14 @@ approve ApproveParams{..} = do
     logInfo @String $ printf "found auction utxo with datum %s" $ show d        
 
     pkh <- ownPubKeyHash
-
-    unless (pkh == aSeller adAuction) $
-        throwError $ T.pack $ printf "only seller may approve" 
+    unless (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "only seller may approve" 
 
     let (fitForApproval, notRegistered, alreadyApproved) = h apApprovals $ aBidders adAuction
     when (null fitForApproval) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
     unless (null notRegistered) $ logInfo @String $ printf "not registered %s" $ show notRegistered
     unless (null alreadyApproved) $ logInfo @String $ printf "already approved %s" $ show alreadyApproved
 
-    let bidders' = g fitForApproval $ aBidders adAuction
+    let bidders' = approveBidders fitForApproval $ aBidders adAuction
 
     let d' = d {adAuction = adAuction {aBidders = bidders'}}
         v  = anchorValue apAnchor <> auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid adHighestBid)
@@ -165,13 +161,10 @@ bid BidParams{..} = do
         Just x -> pure x
     logInfo @String $ printf "found auction utxo with datum %s" $ show d        
 
-    when (bpBid < minBid d) $
-        throwError $ T.pack $ printf "bid lower than minimal bid %d" $ minBid d
+    when (bpBid < minBid d) $ throwError $ T.pack $ printf "bid lower than minimal bid %d" $ minBid d
   
     pkh <- ownPubKeyHash
-
-    unless (isBidderApproved (aBidders adAuction) pkh) $
-        throwError $ T.pack $ printf "bidder not approved %s" $ show pkh
+    unless (isBidderApproved (aBidders adAuction) pkh) $ throwError $ T.pack $ printf "bidder not approved %s" $ show pkh
  
     let b  = Bid {bBidder = pkh, bBid = bpBid}
         d' = d {adHighestBid = Just b}
@@ -209,6 +202,7 @@ close CloseParams{..} = do
         Just x -> pure x
     logInfo @String $ printf "found auction utxo with datum %s" (show d)         
 
+    -- todo
     -- void $ awaitTime $ aDeadline adAuction ??? ######################################            
  
     let t      = auctionedTokenValue adAuction
