@@ -18,7 +18,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Auction.Types
-    ( AlreadyApproved(..)
+    ( AlreadyApproveds(..)
     , ApproveParams(..)
     , Auction(..)
     , Auctioning
@@ -26,8 +26,9 @@ module Auction.Types
     , AuctionDatum(..)
     , Bid(..)
     , Bidders
-    , FitForApproval(..)
-    , NotRegistered(..)
+    , FitForApprovals(..)
+    , FitForRegistration(..)
+    , NotRegistereds(..)
     , Status(..)
     , BidParams(..)
     , CloseParams(..)
@@ -158,7 +159,8 @@ data CloseParams = CloseParams
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 
-newtype FitForApproval = FitForApproval [PubKeyHash] deriving P.Show
-newtype NotRegistered = NotRegistered [PubKeyHash] deriving P.Show
-newtype AlreadyApproved = AlreadyApproved [PubKeyHash] deriving P.Show
+newtype FitForRegistration = FitForRegistration PubKeyHash deriving P.Show
+newtype FitForApprovals = FitForApprovals [PubKeyHash] deriving P.Show
+newtype NotRegistereds = NotRegistereds [PubKeyHash] deriving P.Show
+newtype AlreadyApproveds = AlreadyApproveds [PubKeyHash] deriving P.Show
     

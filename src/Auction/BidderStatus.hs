@@ -50,17 +50,26 @@ isBidderApproved :: Bidders -> PubKeyHash -> Bool
 isBidderApproved m pkh = maybe False (== Approved) $ AssocMap.lookup pkh m
 
 
-registerBidder :: Bidders -> PubKeyHash -> Either T.Text Bidders
-registerBidder m pkh =
-    if isBidderApproved m pkh then
-        Left "may not register already approved" 
-    else
-        Right $ AssocMap.insert pkh Registered m
+analyzeRegisteree :: PubKeyHash -> Either T.Text FitForRegistration
+analyzeRegisteree pkh =
 
 
-approveBidders :: Bidders -> FitForApproval -> Bidders
-approveBidders m (FitForApproval xs) = foldr (`AssocMap.insert` Approved) m xs
-
-
-analyzeApprovees :: Bidders -> [PubKeyHash] -> (FitForApproval, NotRegistered, AlreadyApproved)
+analyzeApprovees :: Bidders -> [PubKeyHash] -> (FitForApprovals, NotRegistereds, AlreadyApproveds)
 analyzeApprovees m = foldr f (FitForApproval [], NotRegistered [], AlreadyApproved [])
+
+
+-- registerBidder :: Bidders -> PubKeyHash -> Either T.Text Bidders
+-- registerBidder m pkh =
+--     if isBidderApproved m pkh then
+--         Left "may not register already approved" 
+--     else
+--         Right $ AssocMap.insert pkh Registered m
+
+registerBidder :: Bidders -> FitForRegistration -> Bidders
+registerBidder m (FitForRegistration x) = AssocMap.insert x Registered m
+
+
+approveBidders :: Bidders -> FitForApprovals -> Bidders
+approveBidders m (FitForApprovals xs) = foldr (`AssocMap.insert` Approved) m xs
+
+

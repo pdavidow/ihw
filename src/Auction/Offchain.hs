@@ -135,10 +135,10 @@ approve ApproveParams{..} = do
     pkh <- ownPubKeyHash
     unless (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "only seller may approve" 
 -----
-    let (fits@(FitForApproval fitForApproval), NotRegistered notRegistered, AlreadyApproved alreadyApproved) = analyzeApprovees (aBidders adAuction) apApprovals
-    when (null fitForApproval) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
-    unless (null notRegistered) $ logInfo @String $ printf "not registered %s" $ show notRegistered
-    unless (null alreadyApproved) $ logInfo @String $ printf "already approved %s" $ show alreadyApproved
+    let (fits@(FitForApprovals fitForApprovals), NotRegistereds notRegistereds, AlreadyApproveds alreadyApproveds) = analyzeApprovees (aBidders adAuction) apApprovals
+    when (null fitForApprovals) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
+    unless (null notRegistereds) $ logInfo @String $ printf "not registered %s" $ show notRegistereds
+    unless (null alreadyApproveds) $ logInfo @String $ printf "already approved %s" $ show alreadyApproveds
 
     let bidders' = approveBidders (aBidders adAuction) fits
 
