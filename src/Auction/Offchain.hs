@@ -170,7 +170,7 @@ bid BidParams{..} = do
   
     pkh <- ownPubKeyHash
 
-    unless (isBidderApproved pkh $ aBidders adAuction) $
+    unless (isBidderApproved (aBidders adAuction) pkh) $
         throwError $ T.pack $ printf "bidder not approved %s" $ show pkh
  
     let b  = Bid {bBidder = pkh, bBid = bpBid}

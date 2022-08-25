@@ -105,7 +105,7 @@ mkAuctionValidator ad redeemer ctx =
             traceIfFalse "wrong refund"       correctBidRefund             &&
             traceIfFalse "too late"           correctBidSlotRange
 
-        Close           ->
+        Close ->
             traceIfFalse "too early" correctCloseSlotRange &&
             case adHighestBid ad of
                 Nothing      ->
