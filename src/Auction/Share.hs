@@ -138,7 +138,7 @@ data RegisterParams = RegisterParams -- no newtype
 
 
 data ApproveParams = ApproveParams
-    { apApprovals :: ![PubKeyHash]
+    { apApprovals :: ![PubKeyHash] -- todo: use Non Empty List
     , apAnchor :: !Anchor
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 

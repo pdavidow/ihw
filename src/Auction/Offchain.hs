@@ -46,11 +46,11 @@ type AuctionSchema =
 endpoints :: Contract (Last Anchor) AuctionSchema T.Text ()
 endpoints = awaitPromise (start' `select` bid' `select` close' `select` register' `select` approve') >> endpoints
   where
-    start'    = endpoint @"start" start
-    bid'      = endpoint @"bid"   bid
-    close'    = endpoint @"close" close
+    start'    = endpoint @"start"    start
+    bid'      = endpoint @"bid"      bid
+    close'    = endpoint @"close"    close
     register' = endpoint @"register" register
-    approve'  = endpoint @"approve" approve
+    approve'  = endpoint @"approve"  approve
 
 
 start :: StartParams -> Contract (Last Anchor) AuctionSchema T.Text ()
@@ -121,7 +121,22 @@ register RegisterParams{..} = do
 
 
 approve :: ApproveParams -> Contract w AuctionSchema T.Text ()
-approve ApproveParams{..} = undefined
+approve ApproveParams{..} = do
+    when (null apApprovals) $ throwError $ T.pack "list may not be empty" 
+
+    mbX <- findViaAnchor apAnchor
+    (oref, o, d@AuctionDatum{..}) <- case mbX of
+        Nothing -> throwError "anchor not found" 
+        Just x -> pure x
+    logInfo @String $ printf "found auction utxo with datum %s" $ show d        
+
+    let bidders = aBidders adAuction
+
+    pkh <- ownPubKeyHash
+
+    unless (pkh == aSeller adAuction) $
+        throwError $ T.pack $ printf "only seller may approve" 
+
 
 
 bid :: BidParams -> Contract w AuctionSchema T.Text ()
