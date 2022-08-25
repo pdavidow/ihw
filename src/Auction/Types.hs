@@ -26,8 +26,6 @@ module Auction.Types
     , AuctionDatum(..)
     , Bid(..)
     , Bidders
-    , FitForApprovals(..)
-    , FitForRegistration(..)
     , NotRegistereds(..)
     , Status(..)
     , BidParams(..)
@@ -51,10 +49,9 @@ import           Schema (ToSchema)
 
 import           Anchor
      
-newtype FitForRegistration = FitForRegistration PubKeyHash deriving P.Show
-newtype FitForApprovals = FitForApprovals [PubKeyHash] deriving P.Show
 newtype NotRegistereds = NotRegistereds [PubKeyHash] deriving P.Show
 newtype AlreadyApproveds = AlreadyApproveds [PubKeyHash] deriving P.Show
+
 
 data Auctioning
 

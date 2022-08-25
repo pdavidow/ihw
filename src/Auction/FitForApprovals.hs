@@ -17,14 +17,11 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Auction.BidderStatus
-    ( analyzeApprovees
-    , analyzeRegisteree
-    , approveBidders
-    , isBidderApproved
-    , isBidderRegistered
-    , registerBidder
-    ) 
+module Auction.FitForApprovals 
+    ( FitForApprovals -- hide constructor
+    , certifyApprovees
+    , pkhsFor
+    )
     where
 
 import           Data.Aeson (FromJSON, ToJSON)
@@ -39,23 +36,16 @@ import           PlutusTx.Prelude
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Auction.Share
-import           Auction.Types
+import           Anchor
 
 
-isBidderRegistered :: Bidders -> PubKeyHash -> Bool 
-isBidderRegistered m x = maybe False (== Registered) $ AssocMap.lookup x m
+newtype FitForApprovals = FitForApprovals [PubKeyHash] deriving P.Show
 
 
-isBidderApproved :: Bidders -> PubKeyHash -> Bool 
-isBidderApproved m x = maybe False (== Approved) $ AssocMap.lookup x m
+certifyApprovees :: Bidders -> [PubKeyHash] -> (FitForApprovals, NotRegistereds, AlreadyApproveds)
+certifyApprovees m = foldr f (FitForApprovals [], NotRegistereds [], AlreadyApproveds [])
+    where f = P.undefined
 
 
-registerBidder :: Bidders -> FitForRegistration -> Bidders
-registerBidder m (FitForRegistration x) = AssocMap.insert x Registered m
-
-
-approveBidders :: Bidders -> FitForApprovals -> Bidders
-approveBidders m (FitForApprovals xs) = foldr (`AssocMap.insert` Approved) m xs
-
-
+pkhsFor :: FitForApprovals -> [PubKeyHash]
+pkhsFor (FitForApprovals xs) = xs

@@ -47,6 +47,8 @@ import           PlutusTx.Prelude
 import           Anchor 
 
 import           Auction.BidderStatus
+import qualified Auction.FitForApprovals as FFA
+import qualified Auction.FitForRegistration as FFR
 import           Auction.Share
 import           Auction.Types
 
@@ -87,14 +89,16 @@ mkAuctionValidator ad redeemer ctx =
     traceIfFalse "wrong input value" correctInputValue &&
 
     case redeemer of
-        Register (FitForRegistration fitPkh) ->
-            traceIfFalse "bidder is seller" (not $ isSeller fitPkh) &&
-            traceIfFalse "bidder already registered" (not $ isBidderAtLeastRegistered fitPkh)
+        Register ffr ->
+            traceIfFalse "bidder is seller" (not $ isSeller ffrPkh) &&
+            traceIfFalse "bidder already registered" (not $ isBidderAtLeastRegistered ffrPkh)
+            where ffrPkh = FFR.pkhFor ffr
 
-        Approve sellerPkh (FitForApprovals fitPkhs) ->
+        Approve sellerPkh ffa ->
             traceIfFalse "approver is not seller" (isSeller sellerPkh) &&
-            traceIfFalse "empty list" (not $ null fitPkhs) &&
-            traceIfFalse "not all are registered" (isAllRegisterd fitPkhs)
+            traceIfFalse "empty list" (not $ null ffaPkhs) &&
+            traceIfFalse "not all are registered" (isAllRegisterd ffaPkhs)
+            where ffaPkhs = FFA.pkhsFor ffa
 
         MkBid b@Bid{..} ->
             traceIfFalse "bid too low"        (sufficientBid bBid)         &&
