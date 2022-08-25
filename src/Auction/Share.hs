@@ -24,22 +24,24 @@ module Auction.Share
     , AuctionDatum(..)
     , Bid(..)
     , Bidders
-    , BidderState(..)
+    , Status(..)
     , BidParams(..)
     , CloseParams(..)
     , RegisterParams(..)
     , StartParams(..)
     , auctionDatum
     , auctionedTokenValue
-    , bidderState
+    , bidderStatus
     , isBidderApproved
     , isBidderRegistered
     , minBid
     , minLovelace
+    , registerBidder
     ) 
     where
 
 import           Data.Aeson (FromJSON, ToJSON)
+import qualified Data.Text as T
 import           GHC.Generics (Generic)
 
 import           Ledger 
@@ -53,21 +55,21 @@ import           Schema (ToSchema)
 import           Anchor
      
 
-data BidderState = BidderRegistered | BidderApproved
+data Status = Registered | Approved
     deriving stock (P.Eq, P.Show, Generic)
     deriving anyclass (ToJSON, FromJSON, ToSchema)
 
-instance Eq BidderState where
+instance Eq Status where
     {-# INLINABLE (==) #-}
-    BidderRegistered == BidderRegistered = True
-    BidderApproved == BidderApproved = True
+    Registered == Registered = True
+    pproved == Approved = True
     _ == _ = False
 
-PlutusTx.makeIsDataIndexed ''BidderState [('BidderRegistered, 0), ('BidderApproved, 1)]
-PlutusTx.makeLift ''BidderState  
+PlutusTx.makeIsDataIndexed ''Status [('Registered, 0), ('Approved, 1)]
+PlutusTx.makeLift ''Status  
 
 
-type Bidders = AssocMap.Map PubKeyHash BidderState
+type Bidders = AssocMap.Map PubKeyHash Status
 
 
 data Auction = Auction
@@ -176,20 +178,27 @@ minLovelace :: Integer
 minLovelace = 2000000
 
 
-bidderState :: PubKeyHash -> Bidders -> Maybe BidderState 
-bidderState = AssocMap.lookup
+bidderStatus :: PubKeyHash -> Bidders -> Maybe Status 
+bidderStatus = AssocMap.lookup
 
 
 isBidderRegistered :: PubKeyHash -> Bidders -> Bool 
 isBidderRegistered pkh m = 
-    case bidderState pkh m of
+    case bidderStatus pkh m of
         Nothing -> False 
-        Just x -> x == BidderRegistered
+        Just x -> x == Registered
 
 
 isBidderApproved :: PubKeyHash -> Bidders -> Bool 
 isBidderApproved pkh m = 
-    case bidderState pkh m of
+    case bidderStatus pkh m of
         Nothing -> False 
-        Just x -> x == BidderApproved
+        Just x -> x == Approved
 
+
+registerBidder :: PubKeyHash -> Bidders -> Either T.Text Bidders
+registerBidder pkh m =
+    if AssocMap.member pkh m then
+        Left "already registered" 
+    else
+        Right $ AssocMap.insert pkh Registered m

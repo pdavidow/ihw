@@ -85,7 +85,30 @@ start StartParams{..} = do
 
 
 register :: RegisterParams -> Contract w AuctionSchema T.Text ()
-register RegisterParams{..} = undefined
+register RegisterParams{..} = do
+    mbX <- findViaAnchor rpAnchor
+    (oref, o, d@AuctionDatum{..}) <- case mbX of
+        Nothing -> throwError "anchor not found" 
+        Just x -> pure x
+    logInfo @String $ printf "found auction utxo with datum %s" $ show d        
+
+    let bidders = aBidders adAuction
+
+    pkh <- ownPubKeyHash
+
+    when (pkh == aSeller adAuction) $
+        throwError $ T.pack $ printf "seller may not register" 
+  
+    when (AssocMap.member pkh bidders) $
+        throwError $ T.pack $ printf "already registered" 
+
+    bidders' <- case registerBidder pkh bidders of
+        Left e -> throwError e
+        Right x -> pure x
+
+    let d' = d {adAuction = adAuction {aBidders = bidders'}}
+
+    pure ()
 
 
 approve :: ApproveParams -> Contract w AuctionSchema T.Text ()
@@ -105,8 +128,8 @@ bid BidParams{..} = do
   
     pkh <- ownPubKeyHash
 
-    unless (isBidderRegistered pkh $ aBidders adAuction) $
-        throwError $ T.pack $ printf "bidder not registered %s" $ show pkh
+    unless (isBidderApproved pkh $ aBidders adAuction) $
+        throwError $ T.pack $ printf "bidder not approved %s" $ show pkh
  
     let b  = Bid {bBidder = pkh, bBid = bpBid}
         d' = d {adHighestBid = Just b}
