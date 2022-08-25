@@ -186,15 +186,15 @@ bidderStatus :: PubKeyHash -> Bidders -> Maybe Status
 bidderStatus = AssocMap.lookup
 
 
-isBidderRegistered :: PubKeyHash -> Bidders -> Bool 
-isBidderRegistered pkh m = 
+isBidderRegistered :: Bidders -> PubKeyHash -> Bool 
+isBidderRegistered m pkh = 
     case bidderStatus pkh m of
         Nothing -> False 
         Just x -> x == Registered
 
 
-isBidderApproved :: PubKeyHash -> Bidders -> Bool 
-isBidderApproved pkh m = 
+isBidderApproved :: Bidders -> PubKeyHash -> Bool 
+isBidderApproved m pkh = 
     case bidderStatus pkh m of
         Nothing -> False 
         Just x -> x == Approved

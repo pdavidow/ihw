@@ -152,9 +152,9 @@ mkAuctionValidator ad redeemer ctx =
     isBidderAtLeastRegistered :: PubKeyHash -> Bool      
     isBidderAtLeastRegistered pkh = AssocMap.member pkh $ aBidders auction
 
-
     isAllRegisterd :: [PubKeyHash] -> Bool 
-    isAllRegisterd = AssocMap.all (== Registered)
+    isAllRegisterd = all $ isBidderRegistered $ aBidders auction
+
 
     sufficientBid :: Integer -> Bool
     sufficientBid amount = amount >= minBid ad
