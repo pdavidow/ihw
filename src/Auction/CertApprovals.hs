@@ -55,11 +55,11 @@ certifyApprovees :: BiddersMap -> [PubKeyHash] -> (CertApprovals, AlreadyApprove
 certifyApprovees m = foldr f (CertApprovals [], AlreadyApproveds [], NotRegistereds [])
     where f = \ x (CertApprovals xs, AlreadyApproveds ys, NotRegistereds zs) ->
             if isBidderRegistered m x then
-                (CertApprovals x:xs, AlreadyApproveds ys, NotRegistereds zs)
+                (CertApprovals $ x:xs, AlreadyApproveds ys, NotRegistereds zs)
             else if isBidderApproved m x then
-                (CertApprovals xs, AlreadyApproveds x:ys, NotRegistereds zs)
+                (CertApprovals xs, AlreadyApproveds $ x:ys, NotRegistereds zs)
             else
-                (CertApprovals xs, AlreadyApproveds ys, NotRegistereds x:zs)
+                (CertApprovals xs, AlreadyApproveds ys, NotRegistereds $ x:zs)
 
 
 {-# INLINABLE pkhsFor #-}
