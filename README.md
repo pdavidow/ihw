@@ -12,7 +12,9 @@ Create repo with similar functionality.  Use unit tests, not playground.
 ---
 
 NOTES
-Introduced Anchor such that auctioned NFT only serves one purpose. See branch "base" for starting point.
+1) See branch "base" for starting point.
+2) Introduced Anchor such that auctioned NFT only serves one purpose. 
+3) Proliferation of modules is mostly due to avoidance of cyclic dependencies.
 ---
 
 USAGE

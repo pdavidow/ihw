@@ -17,35 +17,30 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Auction.FitForApprovals 
-    ( FitForApprovals -- hide constructor
-    , certifyApprovees
-    , pkhsFor
-    )
+module Auction.Status
+    ( Status(..)
+
+    ) 
     where
 
 import           Data.Aeson (FromJSON, ToJSON)
-import qualified Data.Text as T
 import           GHC.Generics (Generic)
 
-import           Ledger 
-import           Ledger.Value as Value
 import qualified PlutusTx
-import qualified PlutusTx.AssocMap as AssocMap
 import           PlutusTx.Prelude 
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Anchor
 
+data Status = Registered | Approved
+    deriving stock (P.Eq, P.Show, Generic)
+    deriving anyclass (ToJSON, FromJSON, ToSchema)
 
-newtype FitForApprovals = FitForApprovals [PubKeyHash] deriving P.Show
+instance Eq Status where
+    {-# INLINABLE (==) #-}
+    Registered == Registered = True
+    Approved == Approved = True
+    _ == _ = False
 
-
-certifyApprovees :: Bidders -> [PubKeyHash] -> (FitForApprovals, NotRegistereds, AlreadyApproveds)
-certifyApprovees m = foldr f (FitForApprovals [], NotRegistereds [], AlreadyApproveds [])
-    where f = P.undefined
-
-
-pkhsFor :: FitForApprovals -> [PubKeyHash]
-pkhsFor (FitForApprovals xs) = xs
+PlutusTx.makeIsDataIndexed ''Status [('Registered, 0), ('Approved, 1)]
+PlutusTx.makeLift ''Status  

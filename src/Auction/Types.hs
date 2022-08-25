@@ -18,16 +18,14 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Auction.Types
-    ( AlreadyApproveds(..)
-    , ApproveParams(..)
+    ( ApproveParams(..)
     , Auction(..)
     , Auctioning
     , AuctionAction(..)
     , AuctionDatum(..)
     , Bid(..)
-    , Bidders
-    , NotRegistereds(..)
-    , Status(..)
+    , BiddersMap
+
     , BidParams(..)
     , CloseParams(..)
     , RegisterParams(..)
@@ -48,34 +46,17 @@ import qualified Prelude as P
 import           Schema (ToSchema)
 
 import           Anchor
-     
-newtype NotRegistereds = NotRegistereds [PubKeyHash] deriving P.Show
-newtype AlreadyApproveds = AlreadyApproveds [PubKeyHash] deriving P.Show
+import qualified Auction.CertApprovals as CA
+import qualified Auction.CertRegistration as CR
+import           Auction.Synonyms
 
 
 data Auctioning
 
 
-data Status = Registered | Approved
-    deriving stock (P.Eq, P.Show, Generic)
-    deriving anyclass (ToJSON, FromJSON, ToSchema)
-
-instance Eq Status where
-    {-# INLINABLE (==) #-}
-    Registered == Registered = True
-    Approved == Approved = True
-    _ == _ = False
-
-PlutusTx.makeIsDataIndexed ''Status [('Registered, 0), ('Approved, 1)]
-PlutusTx.makeLift ''Status  
-
-
-type Bidders = AssocMap.Map PubKeyHash Status
-
-
 data Auction = Auction
     { aSeller   :: !PubKeyHash
-    , aBidders  :: !Bidders
+    , aBidders  :: !BiddersMap
     , aDeadline :: !POSIXTime
     , aMinBid   :: !Integer
     , aCurrency :: !CurrencySymbol
@@ -109,8 +90,8 @@ PlutusTx.makeLift ''Bid
 
 
 data AuctionAction 
-    = Register FitForRegistration
-    | Approve {aaSeller :: PubKeyHash, aaFits :: FitForApprovals}
+    = Register CR.CertRegistration
+    | Approve {aaSeller :: PubKeyHash, aaFits :: CA.CertApprovals}
     | MkBid Bid 
     | Close 
     deriving P.Show

@@ -17,12 +17,11 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Auction.Share
-    ( auctionDatum
-    , auctionedTokenValue
-    , minBid
-    , minLovelace
-    ) 
+module Auction.CertApprovals 
+    ( CertApprovals -- hide constructor
+    , certifyApprovees
+    , pkhsFor
+    )
     where
 
 import           Data.Aeson (FromJSON, ToJSON)
@@ -37,30 +36,17 @@ import           PlutusTx.Prelude
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Auction.Types
-     
+import           Auction.Synonyms ( BiddersMap )
+import           Auction.TypesNonCertBidderStatus
 
 
-{-# INLINABLE minBid #-}
-minBid :: AuctionDatum -> Integer
-minBid AuctionDatum{..} = case adHighestBid of
-    Nothing      -> aMinBid adAuction
-    Just Bid{..} -> bBid + 1
+newtype CertApprovals = CertApprovals [PubKeyHash] deriving P.Show
 
 
-{-# INLINABLE auctionDatum #-}
-auctionDatum :: TxOut -> (DatumHash -> Maybe Datum) -> Maybe AuctionDatum
-auctionDatum o f = do
-    dh <- txOutDatum o
-    Datum d <- f dh
-    PlutusTx.fromBuiltinData d
+certifyApprovees :: BiddersMap -> [PubKeyHash] -> (CertApprovals, NotRegistereds, AlreadyApproveds)
+certifyApprovees m = foldr f (CertApprovals [], NotRegistereds [], AlreadyApproveds [])
+    where f = P.undefined
 
 
-auctionedTokenValue :: Auction -> Value
-auctionedTokenValue x = Value.singleton (aCurrency x) (aToken x) 1
-
-
-minLovelace :: Integer
-minLovelace = 2000000
-
-
+pkhsFor :: CertApprovals -> [PubKeyHash]
+pkhsFor (CertApprovals xs) = xs

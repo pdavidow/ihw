@@ -18,9 +18,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Auction.BidderStatus
-    ( analyzeApprovees
-    , analyzeRegisteree
-    , approveBidders
+    ( approveBidders
     , isBidderApproved
     , isBidderRegistered
     , registerBidder
@@ -39,23 +37,26 @@ import           PlutusTx.Prelude
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Auction.Share
-import           Auction.Types
+import qualified Auction.CertApprovals as CA
+import qualified Auction.CertRegistration as CR
+
+import           Auction.Status
+import           Auction.Synonyms
 
 
-isBidderRegistered :: Bidders -> PubKeyHash -> Bool 
+isBidderRegistered :: BiddersMap -> PubKeyHash -> Bool 
 isBidderRegistered m x = maybe False (== Registered) $ AssocMap.lookup x m
 
 
-isBidderApproved :: Bidders -> PubKeyHash -> Bool 
+isBidderApproved :: BiddersMap -> PubKeyHash -> Bool 
 isBidderApproved m x = maybe False (== Approved) $ AssocMap.lookup x m
 
 
-registerBidder :: Bidders -> FitForRegistration -> Bidders
-registerBidder m (FitForRegistration x) = AssocMap.insert x Registered m
+registerBidder :: BiddersMap -> CR.CertRegistration -> BiddersMap
+registerBidder m x = AssocMap.insert (CR.pkhFor x) Registered m
 
 
-approveBidders :: Bidders -> FitForApprovals -> Bidders
-approveBidders m (FitForApprovals xs) = foldr (`AssocMap.insert` Approved) m xs
+approveBidders :: BiddersMap -> CA.CertApprovals -> BiddersMap
+approveBidders m x = foldr (`AssocMap.insert` Approved) m $ CA.pkhsFor x
 
 

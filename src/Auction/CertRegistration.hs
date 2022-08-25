@@ -17,17 +17,16 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Auction.Share
-    ( auctionDatum
-    , auctionedTokenValue
-    , minBid
-    , minLovelace
+module Auction.CertRegistration
+    ( CertRegistration -- hide constructor
+    , certifyRegisteree
+    , pkhFor
     ) 
     where
 
-import           Data.Aeson (FromJSON, ToJSON)
+
 import qualified Data.Text as T
-import           GHC.Generics (Generic)
+
 
 import           Ledger 
 import           Ledger.Value as Value
@@ -37,30 +36,19 @@ import           PlutusTx.Prelude
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Auction.Types
-     
+import           Auction.BidderStatusUtil
+import           Auction.Synonyms
 
 
-{-# INLINABLE minBid #-}
-minBid :: AuctionDatum -> Integer
-minBid AuctionDatum{..} = case adHighestBid of
-    Nothing      -> aMinBid adAuction
-    Just Bid{..} -> bBid + 1
+newtype CertRegistration = CertRegistration PubKeyHash deriving P.Show
 
 
-{-# INLINABLE auctionDatum #-}
-auctionDatum :: TxOut -> (DatumHash -> Maybe Datum) -> Maybe AuctionDatum
-auctionDatum o f = do
-    dh <- txOutDatum o
-    Datum d <- f dh
-    PlutusTx.fromBuiltinData d
+certifyRegisteree :: BiddersMap -> PubKeyHash -> Either T.Text CertRegistration
+certifyRegisteree m x
+  | isBidderRegistered m x = Left "already registered"
+  | isBidderApproved m x = Left "already approved"
+  | otherwise = Right $ CertRegistration x
 
 
-auctionedTokenValue :: Auction -> Value
-auctionedTokenValue x = Value.singleton (aCurrency x) (aToken x) 1
-
-
-minLovelace :: Integer
-minLovelace = 2000000
-
-
+pkhFor :: CertRegistration -> PubKeyHash
+pkhFor (CertRegistration x) = x

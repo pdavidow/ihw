@@ -17,10 +17,9 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Auction.FitForRegistration
-    ( FitForRegistration -- hide constructor
-    , certifyRegisteree
-    , pkhFor
+module Auction.BidderStatusUtil
+    ( isBidderApproved
+    , isBidderRegistered
     ) 
     where
 
@@ -36,19 +35,14 @@ import           PlutusTx.Prelude
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Anchor
-import           Auction.Types
+
+import           Auction.Status
+import           Auction.Synonyms
 
 
-newtype FitForRegistration = FitForRegistration PubKeyHash deriving P.Show
+isBidderRegistered :: BiddersMap -> PubKeyHash -> Bool 
+isBidderRegistered m x = maybe False (== Registered) $ AssocMap.lookup x m
 
 
-certifyRegisteree :: Bidders -> PubKeyHash -> Either T.Text FitForRegistration
-certifyRegisteree m x
-  | isBidderRegistered m x = Left "already registered"
-  | isBidderApproved m x = Left "already approved"
-  | otherwise = Right $ FitForRegistration x
-
-
-pkhFor :: FitForRegistration -> PubKeyHash
-pkhFor (FitForRegistration x) = x
+isBidderApproved :: BiddersMap -> PubKeyHash -> Bool 
+isBidderApproved m x = maybe False (== Approved) $ AssocMap.lookup x m
