@@ -5,7 +5,7 @@ module Main
 import Test.Tasty ( defaultMain, testGroup, TestTree )
 
 import qualified Spec.Auction.Unit
-import qualified Spec.Auction.Trace
+-- import qualified Spec.Auction.Trace
 
 
 main :: IO ()

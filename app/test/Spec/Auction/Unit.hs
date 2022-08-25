@@ -46,6 +46,7 @@ import           Test.Tasty.QuickCheck              (testProperty)
 import           Anchor
 import           Auction.Offchain 
 import           Auction.Share
+import           Auction.Types
 
 -- todo assertContractError
 -- todo assertInstanceLog
