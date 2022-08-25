@@ -51,6 +51,10 @@ import           Schema (ToSchema)
 
 import           Anchor
      
+newtype FitForRegistration = FitForRegistration PubKeyHash deriving P.Show
+newtype FitForApprovals = FitForApprovals [PubKeyHash] deriving P.Show
+newtype NotRegistereds = NotRegistereds [PubKeyHash] deriving P.Show
+newtype AlreadyApproveds = AlreadyApproveds [PubKeyHash] deriving P.Show
 
 data Auctioning
 
@@ -108,8 +112,8 @@ PlutusTx.makeLift ''Bid
 
 
 data AuctionAction 
-    = Register {aaBidder :: PubKeyHash}
-    | Approve {aaSeller :: PubKeyHash, aaFit :: [PubKeyHash]}
+    = Register FitForRegistration
+    | Approve {aaSeller :: PubKeyHash, aaFits :: FitForApprovals}
     | MkBid Bid 
     | Close 
     deriving P.Show
@@ -159,8 +163,3 @@ data CloseParams = CloseParams
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 
-newtype FitForRegistration = FitForRegistration PubKeyHash deriving P.Show
-newtype FitForApprovals = FitForApprovals [PubKeyHash] deriving P.Show
-newtype NotRegistereds = NotRegistereds [PubKeyHash] deriving P.Show
-newtype AlreadyApproveds = AlreadyApproveds [PubKeyHash] deriving P.Show
-    

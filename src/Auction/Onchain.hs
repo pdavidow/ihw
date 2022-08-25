@@ -87,11 +87,11 @@ mkAuctionValidator ad redeemer ctx =
     traceIfFalse "wrong input value" correctInputValue &&
 
     case redeemer of
-        Register pkh ->
-            traceIfFalse "bidder is seller" (not $ isSeller pkh) &&
-            traceIfFalse "bidder already registered" (not $ isBidderAtLeastRegistered pkh)
+        Register (FitForRegistration fitPkh) ->
+            traceIfFalse "bidder is seller" (not $ isSeller fitPkh) &&
+            traceIfFalse "bidder already registered" (not $ isBidderAtLeastRegistered fitPkh)
 
-        Approve sellerPkh fitPkhs ->
+        Approve sellerPkh (FitForApprovals fitPkhs) ->
             traceIfFalse "approver is not seller" (isSeller sellerPkh) &&
             traceIfFalse "empty list" (not $ null fitPkhs) &&
             traceIfFalse "not all are registered" (isAllRegisterd fitPkhs)

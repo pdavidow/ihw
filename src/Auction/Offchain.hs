@@ -98,12 +98,13 @@ register RegisterParams{..} = do
     when (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "seller may not register" 
 
     let bidders = aBidders adAuction
-    when (isBidderRegistered bidders pkh) $ throwError $ T.pack $ printf "already registered" 
-    when (isBidderApproved bidders pkh)   $ throwError $ T.pack $ printf "already approved" 
 
-    bidders' <- case registerBidder (aBidders adAuction) pkh of
+    fit <- case analyzeRegisteree bidders pkh of
         Left e -> throwError e
         Right x -> pure x
+
+    let bidders' = registerBidder bidders fit 
+
 
     let d' = d {adAuction = adAuction {aBidders = bidders'}}
         v  = anchorValue rpAnchor <> auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid adHighestBid)
@@ -144,7 +145,7 @@ approve ApproveParams{..} = do
 
     let d' = d {adAuction = adAuction {aBidders = bidders'}}
         v  = anchorValue apAnchor <> auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid adHighestBid)
-        r  = Redeemer $ PlutusTx.toBuiltinData $ Approve {aaSeller = pkh, aaFit = fitForApproval}
+        r  = Redeemer $ PlutusTx.toBuiltinData $ Approve pkh fits
 
         lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
                   Constraints.otherScript auctionValidator                <>
@@ -156,7 +157,7 @@ approve ApproveParams{..} = do
     ledgerTx <- submitTxConstraintsWith lookups tx
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
 
-    logInfo @String $ printf "approved bidders %s" $ show fitForApproval
+    logInfo @String $ printf "approved bidders %s" $ show fitForApprovals
 
 
 bid :: BidParams -> Contract w AuctionSchema T.Text ()

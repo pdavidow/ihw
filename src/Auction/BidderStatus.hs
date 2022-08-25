@@ -19,6 +19,7 @@
 
 module Auction.BidderStatus
     ( analyzeApprovees
+    , analyzeRegisteree
     , approveBidders
     , isBidderApproved
     , isBidderRegistered
@@ -43,27 +44,24 @@ import           Auction.Types
 
 
 isBidderRegistered :: Bidders -> PubKeyHash -> Bool 
-isBidderRegistered m pkh = maybe False (== Registered) $ AssocMap.lookup pkh m
+isBidderRegistered m x = maybe False (== Registered) $ AssocMap.lookup x m
 
 
 isBidderApproved :: Bidders -> PubKeyHash -> Bool 
-isBidderApproved m pkh = maybe False (== Approved) $ AssocMap.lookup pkh m
+isBidderApproved m x = maybe False (== Approved) $ AssocMap.lookup x m
 
 
-analyzeRegisteree :: PubKeyHash -> Either T.Text FitForRegistration
-analyzeRegisteree pkh =
+analyzeRegisteree :: Bidders -> PubKeyHash -> Either T.Text FitForRegistration
+analyzeRegisteree m x
+  | isBidderRegistered m x = Left "already registered"
+  | isBidderApproved m x = Left "already approved"
+  | otherwise = Right $ FitForRegistration x
 
 
 analyzeApprovees :: Bidders -> [PubKeyHash] -> (FitForApprovals, NotRegistereds, AlreadyApproveds)
-analyzeApprovees m = foldr f (FitForApproval [], NotRegistered [], AlreadyApproved [])
+analyzeApprovees m = foldr f (FitForApprovals [], NotRegistereds [], AlreadyApproveds [])
+    where f = P.undefined
 
-
--- registerBidder :: Bidders -> PubKeyHash -> Either T.Text Bidders
--- registerBidder m pkh =
---     if isBidderApproved m pkh then
---         Left "may not register already approved" 
---     else
---         Right $ AssocMap.insert pkh Registered m
 
 registerBidder :: Bidders -> FitForRegistration -> Bidders
 registerBidder m (FitForRegistration x) = AssocMap.insert x Registered m
