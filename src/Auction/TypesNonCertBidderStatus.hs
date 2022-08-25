@@ -1,7 +1,6 @@
 module Auction.TypesNonCertBidderStatus
     ( AlreadyApproveds(..)
     , NotRegistereds(..)
-
     ) 
     where
 

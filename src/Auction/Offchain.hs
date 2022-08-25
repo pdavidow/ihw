@@ -133,8 +133,8 @@ approve ApproveParams{..} = do
 
     pkh <- ownPubKeyHash
     unless (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "only seller may approve" 
------
-    let (ca, NotRegistereds notRs, AlreadyApproveds alreadyAs) = CA.certifyApprovees (aBidders adAuction) apApprovals
+
+    let (ca, AlreadyApproveds alreadyAs, NotRegistereds notRs) = CA.certifyApprovees (aBidders adAuction) apApprovals
     let caPkhs = CA.pkhsFor ca
     when (null caPkhs) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
     unless (null notRs) $ logInfo @String $ printf "not registered %s" $ show notRs
