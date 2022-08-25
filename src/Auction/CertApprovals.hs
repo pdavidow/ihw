@@ -40,8 +40,6 @@ import           Auction.BidderStatusUtil
 import           Auction.Synonyms ( BiddersMap )
 import           Auction.TypesNonCertBidderStatus
 
-    -- ( isBidderApproved
-    -- , isBidderRegistered
 
 newtype CertApprovals = CertApprovals [PubKeyHash] 
     deriving stock (P.Eq, P.Ord, P.Show, Generic)
@@ -53,13 +51,13 @@ PlutusTx.makeLift ''CertApprovals
 
 certifyApprovees :: BiddersMap -> [PubKeyHash] -> (CertApprovals, AlreadyApproveds, NotRegistereds)
 certifyApprovees m = foldr f (CertApprovals [], AlreadyApproveds [], NotRegistereds [])
-    where f = \ x (CertApprovals xs, AlreadyApproveds ys, NotRegistereds zs) ->
+    where f = \ x (CertApprovals as, AlreadyApproveds bs, NotRegistereds cs) ->
             if isBidderRegistered m x then
-                (CertApprovals $ x:xs, AlreadyApproveds ys, NotRegistereds zs)
+                (CertApprovals $ x:as, AlreadyApproveds bs, NotRegistereds cs)
             else if isBidderApproved m x then
-                (CertApprovals xs, AlreadyApproveds $ x:ys, NotRegistereds zs)
+                (CertApprovals as, AlreadyApproveds $ x:bs, NotRegistereds cs)
             else
-                (CertApprovals xs, AlreadyApproveds ys, NotRegistereds $ x:zs)
+                (CertApprovals as, AlreadyApproveds bs, NotRegistereds $ x:cs)
 
 
 {-# INLINABLE pkhsFor #-}

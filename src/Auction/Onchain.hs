@@ -92,7 +92,7 @@ mkAuctionValidator ad redeemer ctx =
     case redeemer of
         Register cr ->
             traceIfFalse "bidder is seller" (not $ isSeller crPkh) &&
-            traceIfFalse "bidder already registered" (not $ isBidderAtLeastRegistered crPkh)
+            traceIfFalse "bidder already registered or approved" (not $ isBidderAtLeastRegistered crPkh)
             where crPkh = CR.pkhFor cr
 
         Approve sellerPkh ca ->
@@ -102,7 +102,7 @@ mkAuctionValidator ad redeemer ctx =
             where caPkhs = CA.pkhsFor ca
 
         MkBid b@Bid{..} ->
-            traceIfFalse "bidder not registered" (isBidderRegistered (aBidders auction) bBidder) &&
+            -- traceIfFalse "bidder not registered" (isBidderRegistered (aBidders auction) bBidder) &&
             traceIfFalse "bid too low" (sufficientBid bBid) &&
             traceIfFalse "wrong output datum" (correctBidOutputDatum b) &&
             traceIfFalse "wrong output value" (correctBidOutputValue bBid) &&
