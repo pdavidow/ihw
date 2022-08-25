@@ -17,7 +17,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Auction.Bidders 
+module Auction.BidderStatus
     ( analyzeApprovees
     , approveBidders
     , isBidderApproved

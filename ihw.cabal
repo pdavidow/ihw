@@ -22,7 +22,7 @@ common project-config
 
 library
   exposed-modules:   Anchor
-                     , Auction.Bidders
+                     , Auction.BidderStatus
                      , Auction.Offchain
                      , Auction.Onchain
                      , Auction.Share

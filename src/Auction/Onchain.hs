@@ -46,7 +46,7 @@ import           PlutusTx.Prelude
 
 import           Anchor 
 
-import           Auction.Bidders
+import           Auction.BidderStatus
 import           Auction.Share
 import           Auction.Types
 

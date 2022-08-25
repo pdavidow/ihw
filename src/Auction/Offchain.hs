@@ -31,7 +31,7 @@ import           Ledger.Value ( assetClassValue, assetClassValueOf )
 import qualified Plutus.Contracts.Currency as Currency
 
 import           Anchor
-import           Auction.Bidders 
+import           Auction.BidderStatus 
 import           Auction.Onchain                   
 import           Auction.Share
 import           Auction.Types
