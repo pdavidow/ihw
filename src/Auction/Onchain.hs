@@ -102,7 +102,7 @@ mkAuctionValidator ad redeemer ctx =
             where caPkhs = CA.pkhsFor ca
 
         MkBid b@Bid{..} ->
-            traceIfFalse "bidder not registered" (isBidderRegistered (aBidders auction) bBidder) &&
+            traceIfFalse "bidder not approved" (isBidderApproved (aBidders auction) bBidder) &&
             traceIfFalse "bid too low" (sufficientBid bBid) &&
             traceIfFalse "wrong output datum" (correctBidOutputDatum b) &&
             traceIfFalse "wrong output value" (correctBidOutputValue bBid) &&
