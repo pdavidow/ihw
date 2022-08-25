@@ -52,12 +52,9 @@ PlutusTx.makeLift ''CertApprovals
 certifyApprovees :: BiddersMap -> [PubKeyHash] -> (CertApprovals, AlreadyApproveds, NotRegistereds)
 certifyApprovees m = foldr f (CertApprovals [], AlreadyApproveds [], NotRegistereds [])
     where f = \ x (CertApprovals as, AlreadyApproveds bs, NotRegistereds cs) ->
-            if isBidderRegistered m x then
-                (CertApprovals $ x:as, AlreadyApproveds bs, NotRegistereds cs)
-            else if isBidderApproved m x then
-                (CertApprovals as, AlreadyApproveds $ x:bs, NotRegistereds cs)
-            else
-                (CertApprovals as, AlreadyApproveds bs, NotRegistereds $ x:cs)
+            if isBidderRegistered m x then    (CertApprovals $ x:as, AlreadyApproveds bs    , NotRegistereds cs    )
+            else if isBidderApproved m x then (CertApprovals as    , AlreadyApproveds $ x:bs, NotRegistereds cs    )
+            else                              (CertApprovals as    , AlreadyApproveds bs    , NotRegistereds $ x:cs)
 
 
 {-# INLINABLE pkhsFor #-}
