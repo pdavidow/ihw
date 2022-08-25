@@ -29,9 +29,9 @@ module Auction.Share
     , CloseParams(..)
     , RegisterParams(..)
     , StartParams(..)
+    , approveBidders
     , auctionDatum
     , auctionedTokenValue
-    , bidderStatus
     , isBidderApproved
     , isBidderRegistered
     , minBid
@@ -182,38 +182,27 @@ minLovelace :: Integer
 minLovelace = 2000000
 
 
-bidderStatus :: PubKeyHash -> Bidders -> Maybe Status 
-bidderStatus = AssocMap.lookup
-
-
 isBidderRegistered :: Bidders -> PubKeyHash -> Bool 
-isBidderRegistered m pkh = 
-    case bidderStatus pkh m of
-        Nothing -> False 
-        Just x -> x == Registered
+isBidderRegistered m pkh = maybe False (== Registered) $ AssocMap.lookup pkh m
 
 
 isBidderApproved :: Bidders -> PubKeyHash -> Bool 
-isBidderApproved m pkh = 
-    case bidderStatus pkh m of
-        Nothing -> False 
-        Just x -> x == Approved
+isBidderApproved m pkh = maybe False (== Approved) $ AssocMap.lookup pkh m
 
 
-registerBidder :: PubKeyHash -> Bidders -> Either T.Text Bidders
-registerBidder pkh m =
-    if AssocMap.member pkh m then
-        Left "already (at least) registered" 
+registerBidder :: Bidders -> PubKeyHash -> Either T.Text Bidders
+registerBidder m pkh =
+    if isBidderApproved m pkh then
+        Left "may not register already approved" 
     else
         Right $ AssocMap.insert pkh Registered m
 
 
 approveBidders :: Bidders -> [PubKeyHash] -> Bidders
-approveBidders m xs = foldr f m xs
-    where f = \ x acc -> 
-            if isBidderRegistered x acc then
-                AssocMap.insert x Approved acc
-            else
-                acc
+approveBidders = foldr $ \ x acc -> 
+    if isBidderRegistered acc x then 
+        AssocMap.insert x Approved acc
+    else
+        acc
 
        

@@ -155,7 +155,6 @@ mkAuctionValidator ad redeemer ctx =
     isAllRegisterd :: [PubKeyHash] -> Bool 
     isAllRegisterd = all $ isBidderRegistered $ aBidders auction
 
-
     sufficientBid :: Integer -> Bool
     sufficientBid amount = amount >= minBid ad
 
