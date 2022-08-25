@@ -34,6 +34,7 @@ import           Anchor
 import           Auction.Bidders 
 import           Auction.Onchain                   
 import           Auction.Share
+import           Auction.Types
 
 
 type AuctionSchema =

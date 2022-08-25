@@ -45,12 +45,10 @@ import qualified PlutusTx
 import           PlutusTx.Prelude 
 
 import           Anchor 
--- import           Auction.TypesAuctionRedeemer
+
+import           Auction.Bidders
 import           Auction.Share
--- import           Auction.Utility ( info, isCorrectSlotRange, isValuePaidTo )
-
-
-data Auctioning
+import           Auction.Types
 
 
 instance Scripts.ValidatorTypes Auctioning where

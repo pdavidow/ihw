@@ -40,6 +40,7 @@ import           Schema (ToSchema)
 
 import           Anchor
 import           Auction.Share
+import           Auction.Types
 
 
 isBidderRegistered :: Bidders -> PubKeyHash -> Bool 
