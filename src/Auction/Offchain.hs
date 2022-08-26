@@ -179,7 +179,7 @@ approve ApproveParams{..} = do
 
     logInfo @String $ printf "approved bidders %s" $ show caPkhs
 
-
+  
 bid :: BidParams -> Contract w AuctionSchema T.Text ()
 bid BidParams{..} = do 
     mbX <- findViaAnchor bpAnchor

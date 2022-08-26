@@ -30,6 +30,7 @@ library
                      , Auction.Onchain
                      , Auction.Share
                      , Auction.Status
+                     , Auction.Synonyms                     
                      , Auction.Types
                      , Auction.TypesNonCertBidderStatus
 
