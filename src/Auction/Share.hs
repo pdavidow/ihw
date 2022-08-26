@@ -1,21 +1,5 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Auction.Share
     ( auctionDatum
@@ -25,21 +9,13 @@ module Auction.Share
     ) 
     where
 
-import           Data.Aeson (FromJSON, ToJSON)
-import qualified Data.Text as T
-import           GHC.Generics (Generic)
-
-import           Ledger 
-import           Ledger.Value as Value
+import           Ledger ( Datum(Datum), DatumHash, TxOut, txOutDatum ) 
+import           Ledger.Value as Value ( Value, singleton )
 import qualified PlutusTx
-import qualified PlutusTx.AssocMap as AssocMap
-import           PlutusTx.Prelude 
-import qualified Prelude as P   
-import           Schema (ToSchema)
+import           PlutusTx.Prelude ( Integer, Maybe(..), AdditiveSemigroup((+))) 
 
-import           Auction.Types
+import           Auction.Types ( Auction(..), Bid(..), AuctionDatum(..) )
      
-
 
 {-# INLINABLE minBid #-}
 minBid :: AuctionDatum -> Integer
