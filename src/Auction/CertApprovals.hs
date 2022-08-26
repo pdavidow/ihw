@@ -1,21 +1,10 @@
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
 
 module Auction.CertApprovals 
     ( CertApprovals -- hide constructor
@@ -25,20 +14,16 @@ module Auction.CertApprovals
     where
 
 import           Data.Aeson (FromJSON, ToJSON)
-import qualified Data.Text as T
 import           GHC.Generics (Generic)
-
-import           Ledger 
-import           Ledger.Value as Value
+import           Ledger ( PubKeyHash ) 
 import qualified PlutusTx
-import qualified PlutusTx.AssocMap as AssocMap
-import           PlutusTx.Prelude 
+import           PlutusTx.Prelude ( Eq, Ord, ($), foldr ) 
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Auction.BidderStatusUtil
+import           Auction.BidderStatusUtil ( isBidderRegistered, isBidderApproved )
 import           Auction.Synonyms ( BiddersMap )
-import           Auction.TypesNonCertBidderStatus
+import           Auction.TypesNonCertBidderStatus ( NotRegistereds(..), AlreadyApproveds(..) )
 
 
 newtype CertApprovals = CertApprovals [PubKeyHash] 
