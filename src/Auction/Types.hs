@@ -1,21 +1,8 @@
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
 
 module Auction.Types
     ( ApproveParams(..)
@@ -33,21 +20,19 @@ module Auction.Types
     where
 
 import           Data.Aeson (FromJSON, ToJSON)
-import qualified Data.Text as T
 import           GHC.Generics (Generic)
 
-import           Ledger 
-import           Ledger.Value as Value
+import           Ledger ( PubKeyHash, POSIXTime ) 
+import           Ledger.Value as Value ( TokenName, CurrencySymbol )
 import qualified PlutusTx
-import qualified PlutusTx.AssocMap as AssocMap
-import           PlutusTx.Prelude 
+import           PlutusTx.Prelude ( Integer, Maybe, Eq(..), (&&) ) 
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Anchor
+import           Anchor ( AnchorGraveyard, Anchor )
 import qualified Auction.CertApprovals as CA
 import qualified Auction.CertRegistration as CR
-import           Auction.Synonyms
+import           Auction.Synonyms ( BiddersMap )
 
 
 data Auction = Auction
@@ -135,5 +120,3 @@ data CloseParams = CloseParams
     { cpAnchorGraveyard :: !AnchorGraveyard
     , cpAnchor :: !Anchor
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
-
-
