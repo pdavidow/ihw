@@ -1,23 +1,10 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving  #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE BangPatterns #-}
 
 module Auction.Onchain
     ( auctionAddress
@@ -28,30 +15,54 @@ module Auction.Onchain
     )    
     where
 
-import           Data.Aeson.Types (Value(Bool))
-import qualified Data.ByteString.Lazy  as LB
-import qualified Data.ByteString.Short as SBS
-import           Codec.Serialise       ( serialise )
-
 import           Ledger
-import           Ledger.Ada           as Ada
-
-import qualified Plutus.V1.Ledger.Scripts as Plutus
-import           Cardano.Api.Shelley (PlutusScript (..), PlutusScriptV1)
-import qualified Ledger.Typed.Scripts as Scripts
-import qualified Ledger.Value as Value
+                    ( from,
+                    to,
+                    Datum(Datum),
+                    TxOut(txOutDatumHash, txOutValue, txOutAddress),
+                    Address,
+                    Validator,
+                    Value,
+                    PubKeyHash,
+                    pubKeyHashAddress,
+                    scriptHashAddress,
+                    findDatum,
+                    getContinuingOutputs,
+                    contains,
+                    ScriptContext(scriptContextTxInfo),
+                    TxInInfo(txInInfoResolved),
+                    TxInfo(txInfoInputs, txInfoValidRange, txInfoOutputs),
+                    ValidatorHash )
+import           Ledger.Ada as Ada ( lovelaceValueOf )
+import qualified PlutusTx.AssocMap as AssocMap
+import qualified Ledger.Typed.Scripts as Scripts  
 import qualified PlutusTx
-import           PlutusTx.Prelude 
+import           PlutusTx.Prelude
+                    ( Bool(..),
+                    Integer,
+                    Maybe(Just, Nothing),
+                    AdditiveSemigroup((+)),
+                    Eq((==)),
+                    Ord((>=)),
+                    Semigroup((<>)),
+                    ($),
+                    (.),
+                    (&&),
+                    not,
+                    all,
+                    null,
+                    traceError,
+                    traceIfFalse ) 
 
-import           Anchor 
--- import           Auction.TypesAuctionRedeemer
-import           Auction.Share
--- import           Auction.Utility ( info, isCorrectSlotRange, isValuePaidTo )
+import           Anchor ( anchorValue ) 
+import           Auction.BidderStatusUtil ( isBidderRegistered, isBidderApproved )
+import qualified Auction.CertApprovals as CA
+import qualified Auction.CertRegistration as CR
+import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
+import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..) )
 
 
 data Auctioning
-
-
 instance Scripts.ValidatorTypes Auctioning where
     type instance RedeemerType Auctioning = AuctionAction
     type instance DatumType Auctioning = AuctionDatum
@@ -88,14 +99,26 @@ mkAuctionValidator ad redeemer ctx =
     traceIfFalse "wrong input value" correctInputValue &&
 
     case redeemer of
-        MkBid b@Bid{..} ->
-            traceIfFalse "bid too low"        (sufficientBid bBid)         &&
-            traceIfFalse "wrong output datum" (correctBidOutputDatum b)    &&
-            traceIfFalse "wrong output value" (correctBidOutputValue bBid) &&
-            traceIfFalse "wrong refund"       correctBidRefund             &&
-            traceIfFalse "too late"           correctBidSlotRange
+        Register cr ->
+            traceIfFalse "bidder is seller" (not $ isSeller crPkh) &&
+            traceIfFalse "bidder already registered or approved" (not $ isBidderAtLeastRegistered crPkh)
+            where crPkh = CR.pkhFor cr
 
-        Close           ->
+        Approve sellerPkh ca ->
+            traceIfFalse "approver is not seller" (isSeller sellerPkh) &&
+            traceIfFalse "empty list" (not $ null caPkhs) &&
+            traceIfFalse "not all are registered" (isAllRegisterd caPkhs)
+            where caPkhs = CA.pkhsFor ca
+
+        MkBid b@Bid{..} ->
+            traceIfFalse "bidder not approved" (isBidderApproved (aBidders auction) bBidder) &&
+            traceIfFalse "bid too low" (sufficientBid bBid) &&
+            traceIfFalse "wrong output datum" (correctBidOutputDatum b) &&
+            traceIfFalse "wrong output value" (correctBidOutputValue bBid) &&
+            traceIfFalse "wrong refund" correctBidRefund &&
+            traceIfFalse "too late" correctBidSlotRange
+
+        Close ->
             traceIfFalse "too early" correctCloseSlotRange &&
             case adHighestBid ad of
                 Nothing      ->
@@ -130,10 +153,20 @@ mkAuctionValidator ad redeemer ctx =
     tokenValue = auctionedTokenValue auction
 
     correctInputValue :: Bool
-    correctInputValue = inVal == anchorValue (adAnchor ad) <> 
-        case adHighestBid ad of
-            Nothing      -> tokenValue <> Ada.lovelaceValueOf minLovelace
-            Just Bid{..} -> tokenValue <> Ada.lovelaceValueOf (minLovelace + bBid)
+    correctInputValue = inVal == 
+        anchorValue (adAnchor ad) <> tokenValue <> 
+            case adHighestBid ad of
+                Nothing      -> Ada.lovelaceValueOf minLovelace
+                Just Bid{..} -> Ada.lovelaceValueOf $ minLovelace + bBid
+
+    isSeller :: PubKeyHash -> Bool
+    isSeller pkh = aSeller auction == pkh      
+
+    isBidderAtLeastRegistered :: PubKeyHash -> Bool      
+    isBidderAtLeastRegistered pkh = AssocMap.member pkh $ aBidders auction
+
+    isAllRegisterd :: [PubKeyHash] -> Bool 
+    isAllRegisterd = all $ isBidderRegistered $ aBidders auction
 
     sufficientBid :: Integer -> Bool
     sufficientBid amount = amount >= minBid ad

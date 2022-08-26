@@ -7,46 +7,50 @@ module Spec.Auction.Unit
     ( tests
     ) where
 
-import           Cardano.Crypto.Hash                as Crypto
-import           Control.Lens                       hiding (elements)
-import           Control.Monad                      (void, when)
-import qualified Control.Monad.Freer                as Freer
-import qualified Control.Monad.Freer.Error          as Freer
-import           Control.Monad.Freer.Extras.Log     (LogLevel (..))
-import           Control.Monad.Freer.Extras as Extras
+import           Cardano.Crypto.Hash as Crypto ( Blake2b_256, hashToBytes, hashWith )
+import           Control.Lens ( (&), (.~) )
+import           Control.Monad                      (void)
+import           Control.Monad.Freer.Extras as Extras ( logInfo )
 import           Data.Default                       (Default (def))
-import           Data.Either ( fromRight )
 import qualified Data.Map as Map
 import           Data.Monoid                        (Last (..))
 import qualified Data.Text as T
 
-import           Ledger                             (Ada, Slot (..), TokenName, Value)
+import           Ledger                             (TokenName, Value)
 import qualified Ledger.Ada                         as Ada
-import           Plutus.Contract                    hiding (currentSlot)
-import           Plutus.Contract.Test               hiding (not)
-import qualified Streaming.Prelude                  as S
-import qualified Wallet.Emulator.Folds              as Folds
-import qualified Wallet.Emulator.Stream             as Stream
-import           Wallet.Types
-
-import           Ledger.Ada
+import           Plutus.Contract.Test
+                        ( Wallet,
+                        walletPubKeyHash,
+                        (.&&.),
+                        assertNoFailedTransactions,
+                        checkPredicateOptions,
+                        defaultCheckOptions,
+                        emulatorConfig,
+                        w10,
+                        w2,
+                        w3,
+                        w4,
+                        w5,
+                        w6,
+                        w7,
+                        w8,
+                        walletFundsChange )
 import           Ledger.TimeSlot                    (SlotConfig)
 import qualified Ledger.TimeSlot                    as TimeSlot
 import qualified Ledger.Value                       as Value
-import           Plutus.Contract.Test 
-import           Plutus.Contract.Test.ContractModel
-import qualified Plutus.Trace.Emulator          as Trace  
+import qualified Plutus.Trace.Emulator              as Trace  
 import           PlutusTx.Monoid                    (inv)
 import qualified PlutusTx.Prelude                   as PlutusTx
 
-import           Test.QuickCheck                    hiding ((.&&.))
-import           Test.Tasty
-import           Test.Tasty.QuickCheck              (testProperty)
+import           Test.Tasty ( TestTree, testGroup )
 
-import           Anchor
-import           Auction.Offchain 
-import           Auction.Share
+import           Anchor ( AnchorGraveyard(..), Anchor )
+import           Auction.Offchain ( endpoints, AuctionSchema ) 
+import           Auction.Share ( minLovelace )
+import           Auction.Types ( CloseParams(..), BidParams(..), ApproveParams(..), RegisterParams(..), StartParams(..) )
 
+-- todo assertContractError
+-- todo assertInstanceLog
 
 walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF, walletGraveyard :: Wallet 
 walletSeller    = w2 -- W7ce812d
@@ -178,10 +182,10 @@ tests = testGroup "Auction unit"
 
     ,  checkPredicateOptions
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
-        "1 bid at minimal bid"
+        "1 bid at minimal bid, not approved"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace) <> inv theTokenVal)   
-        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace)) <> theTokenVal)                            
+        .&&. walletFundsChange walletSeller mempty
+        .&&. walletFundsChange walletBidderA mempty                         
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
@@ -217,7 +221,61 @@ tests = testGroup "Auction unit"
 
     ,  checkPredicateOptions
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
-        "2 bids higher than min, but second lower than first"
+        "1 bid at minimal bid, yes approved"
+        ( assertNoFailedTransactions    
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace) <> inv theTokenVal)   
+        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace)) <> theTokenVal)                            
+        ) $ do
+            hSeller <- Trace.activateContractWallet walletSeller endpoints          
+            hBidderA <- Trace.activateContractWallet walletBidderA endpoints
+
+            let startParams = StartParams 
+                    { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
+                    , spMinBid   = lowestAcceptableBid
+                    , spCurrency = tokenCurrency
+                    , spToken    = tokenName                   
+                    }  
+            Trace.callEndpoint @"start" hSeller startParams   
+            anchor <- getAnchor hSeller 
+
+            void $ Trace.waitNSlots 5    
+
+            let registerParams = RegisterParams 
+                    { rpAnchor = anchor
+                    }     
+            Trace.callEndpoint @"register" hBidderA registerParams                     
+
+            void $ Trace.waitNSlots 5  
+
+            let approveParams = ApproveParams
+                    { apApprovals = [walletPubKeyHash walletBidderA]
+                    , apAnchor = anchor
+                    } 
+            Trace.callEndpoint @"approve" hSeller approveParams                     
+
+            void $ Trace.waitNSlots 5  
+
+            let bidParams = BidParams
+                    { bpBid    = lowestAcceptableBid
+                    , bpAnchor = anchor
+                    }
+            Trace.callEndpoint @"bid" hBidderA bidParams 
+
+            void $ Trace.waitNSlots 5         
+
+            let closeParams = CloseParams 
+                    { cpAnchorGraveyard = anchorGraveyard
+                    , cpAnchor = anchor
+                    }                  
+            Trace.callEndpoint @"close" hSeller closeParams       
+
+            void $ Trace.waitUntilTime $ spDeadline startParams    
+            void $ Trace.waitNSlots 5    
+
+
+    ,  checkPredicateOptions
+        (defaultCheckOptions & (emulatorConfig .~ emCfg))
+        "2 bids higher than min, but second lower than first, yes approved"
         ( assertNoFailedTransactions    
         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (200_000_000 - minLovelace) <> inv theTokenVal)   
         .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf (200_000_000 - minLovelace)) <> theTokenVal)  
@@ -236,7 +294,27 @@ tests = testGroup "Auction unit"
             Trace.callEndpoint @"start" hSeller startParams   
             anchor <- getAnchor hSeller 
 
-            void $ Trace.waitNSlots 5    
+            void $ Trace.waitNSlots 5      
+
+            let registerParams = RegisterParams 
+                    { rpAnchor = anchor
+                    }     
+            Trace.callEndpoint @"register" hBidderA registerParams        
+            void $ Trace.waitNSlots 5                           
+            Trace.callEndpoint @"register" hBidderB registerParams 
+
+            void $ Trace.waitNSlots 5  
+
+            let approveParams = ApproveParams
+                    { apApprovals = 
+                            [ walletPubKeyHash walletBidderA
+                            , walletPubKeyHash walletBidderB
+                            ]
+                    , apAnchor = anchor
+                    } 
+            Trace.callEndpoint @"approve" hSeller approveParams                     
+
+            void $ Trace.waitNSlots 5  
 
             let bidParamsA = BidParams
                     { bpBid    = 200_000_000
@@ -244,7 +322,7 @@ tests = testGroup "Auction unit"
                     }
             Trace.callEndpoint @"bid" hBidderA bidParamsA  
 
-            void $ Trace.waitNSlots 5     
+            void $ Trace.waitNSlots 5               
 
             let bidParamsB = BidParams
                     { bpBid    = 200_000_000 - 1
@@ -266,7 +344,7 @@ tests = testGroup "Auction unit"
 
     ,  checkPredicateOptions
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
-        "2 bids higher than min, second higher than first"
+        "2 bids higher than min, second higher than first, yes approved"
         ( assertNoFailedTransactions    
         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (200_000_001 - minLovelace) <> inv theTokenVal)   
         .&&. walletFundsChange walletBidderA mempty         
@@ -286,6 +364,26 @@ tests = testGroup "Auction unit"
             anchor <- getAnchor hSeller 
 
             void $ Trace.waitNSlots 5    
+
+            let registerParams = RegisterParams 
+                    { rpAnchor = anchor
+                    }     
+            Trace.callEndpoint @"register" hBidderA registerParams                     
+            void $ Trace.waitNSlots 5  
+            Trace.callEndpoint @"register" hBidderB registerParams                     
+
+            void $ Trace.waitNSlots 5  
+
+            let approveParams = ApproveParams
+                    { apApprovals = 
+                            [ walletPubKeyHash walletBidderA
+                            , walletPubKeyHash walletBidderB
+                            ]
+                    , apAnchor = anchor
+                    } 
+            Trace.callEndpoint @"approve" hSeller approveParams                     
+
+            void $ Trace.waitNSlots 5  
 
             let bidParamsA = BidParams
                     { bpBid    = 200_000_000
@@ -315,7 +413,7 @@ tests = testGroup "Auction unit"
 
     ,  checkPredicateOptions
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
-        "5 bids higher than min, each higher than previous"
+        "5 bids higher than min, each higher than previous, yes approved"
         ( assertNoFailedTransactions    
         .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (100_000_005 - minLovelace) <> inv theTokenVal)   
         .&&. walletFundsChange walletBidderA mempty         
@@ -349,6 +447,35 @@ tests = testGroup "Auction unit"
             Trace.callEndpoint @"bid" hBidderA bidParamsA  
 
             void $ Trace.waitNSlots 5     
+
+            let registerParams = RegisterParams 
+                    { rpAnchor = anchor
+                    }     
+            Trace.callEndpoint @"register" hBidderA registerParams                     
+            void $ Trace.waitNSlots 5  
+            Trace.callEndpoint @"register" hBidderB registerParams  
+            void $ Trace.waitNSlots 5  
+            Trace.callEndpoint @"register" hBidderC registerParams            
+            void $ Trace.waitNSlots 5  
+            Trace.callEndpoint @"register" hBidderD registerParams  
+            void $ Trace.waitNSlots 5  
+            Trace.callEndpoint @"register" hBidderE registerParams                     
+
+            void $ Trace.waitNSlots 5  
+
+            let approveParams = ApproveParams
+                    { apApprovals = 
+                        [ walletPubKeyHash walletBidderA
+                        , walletPubKeyHash walletBidderB
+                        , walletPubKeyHash walletBidderC
+                        , walletPubKeyHash walletBidderD
+                        , walletPubKeyHash walletBidderE
+                        ]
+                    , apAnchor = anchor
+                    } 
+            Trace.callEndpoint @"approve" hSeller approveParams        
+
+            void $ Trace.waitNSlots 5  
 
             let bidParamsB = BidParams
                     { bpBid    = 100_000_002
