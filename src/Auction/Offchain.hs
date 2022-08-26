@@ -143,7 +143,7 @@ register RegisterParams{..} = do
 
     logInfo @String $ printf "registered bidder %s" $ show pkh
 
-
+ 
 approve :: ApproveParams -> Contract w AuctionSchema T.Text ()
 approve ApproveParams{..} = do
     when (null apApprovals) $ throwError $ T.pack "list may not be empty" 
@@ -219,7 +219,8 @@ bid BidParams{..} = do
 
 
 close :: CloseParams -> Contract w AuctionSchema T.Text ()
-close CloseParams{..} = do         
+close CloseParams{..} = do       
+    logInfo @String $ printf "STARTED CLOSE"  
     mbX <- findViaAnchor cpAnchor
     (oref, o, d@AuctionDatum{..}) <- case mbX of
         Nothing -> do
