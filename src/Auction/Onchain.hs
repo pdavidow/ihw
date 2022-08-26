@@ -1,23 +1,10 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving  #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE BangPatterns #-}
 
 module Auction.Onchain
     ( auctionAddress
@@ -28,29 +15,51 @@ module Auction.Onchain
     )    
     where
 
-import           Data.Aeson.Types (Value(Bool))
-import qualified Data.ByteString.Lazy  as LB
-import qualified Data.ByteString.Short as SBS
-import           Codec.Serialise       ( serialise )
-
 import           Ledger
-import           Ledger.Ada           as Ada
-
-import qualified Plutus.V1.Ledger.Scripts as Plutus
+                    ( from,
+                    to,
+                    Datum(Datum),
+                    TxOut(txOutDatumHash, txOutValue, txOutAddress),
+                    Address,
+                    Validator,
+                    Value,
+                    PubKeyHash,
+                    pubKeyHashAddress,
+                    scriptHashAddress,
+                    findDatum,
+                    getContinuingOutputs,
+                    contains,
+                    ScriptContext(scriptContextTxInfo),
+                    TxInInfo(txInInfoResolved),
+                    TxInfo(txInfoInputs, txInfoValidRange, txInfoOutputs),
+                    ValidatorHash )
+import           Ledger.Ada as Ada ( lovelaceValueOf )
 import qualified PlutusTx.AssocMap as AssocMap
-import           Cardano.Api.Shelley (PlutusScript (..), PlutusScriptV1)
-import qualified Ledger.Typed.Scripts as Scripts
-import qualified Ledger.Value as Value
+import qualified Ledger.Typed.Scripts as Scripts  
 import qualified PlutusTx
-import           PlutusTx.Prelude 
+import           PlutusTx.Prelude
+                    ( Bool(..),
+                    Integer,
+                    Maybe(Just, Nothing),
+                    AdditiveSemigroup((+)),
+                    Eq((==)),
+                    Ord((>=)),
+                    Semigroup((<>)),
+                    ($),
+                    (.),
+                    (&&),
+                    not,
+                    all,
+                    null,
+                    traceError,
+                    traceIfFalse ) 
 
-import           Anchor 
-
-import           Auction.BidderStatusUtil
+import           Anchor ( anchorValue ) 
+import           Auction.BidderStatusUtil ( isBidderRegistered, isBidderApproved )
 import qualified Auction.CertApprovals as CA
 import qualified Auction.CertRegistration as CR
-import           Auction.Share
-import           Auction.Types
+import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
+import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..) )
 
 
 data Auctioning
