@@ -12,18 +12,16 @@ Create repo with similar functionality.  Use unit tests, not playground.
 ---
 
 NOTES
+0) Using plutus-apps tag: plutus-starter-devcontainer/v1.0.14
+
 1) See branch "base" for starting point.
 
 2) Introduced Anchor such that auctioned NFT only serves one purpose. 
 
 3) Proliferation of modules is mostly due to avoidance of cyclic dependencies.
 
-4) Failing unit test: "1 bid at minimal bid, not registered but yes approved upfront"
-For some mysterious reason, the "close" endpoint never gets called. See this in Spec.Auction.Trace
-where commenting out "approve" makes it work. 
+4) Error handling is not robust, giving inconsistent results. For example, unit test "2 bids: First lower than min, second at min, yes approved upfront" works, but commented-out test "1 bid at min, not registered but yes approved upfront" simply stops (using same "throwError") and never gets to close (shown in Spec.Auction.Trace.test1).
 ---
 
 USAGE
 cabal run spectests
-
-To run the trace (as per note 4), swap "main"s in spec.hs
