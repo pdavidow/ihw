@@ -1,21 +1,9 @@
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
 
 module Auction.Share
     ( Auction(..)
@@ -35,14 +23,23 @@ module Auction.Share
 import           Data.Aeson (FromJSON, ToJSON)
 import           GHC.Generics (Generic)
 
-import           Ledger 
-import           Ledger.Value as Value
+import           Ledger
+                    ( txOutDatum,
+                    PubKeyHash,
+                    Datum(Datum),
+                    DatumHash,
+                    POSIXTime,
+                    TxOut,
+                    CurrencySymbol,
+                    TokenName,
+                    Value ) 
+import           Ledger.Value as Value ( singleton )
 import qualified PlutusTx
-import           PlutusTx.Prelude 
+import           PlutusTx.Prelude ( Integer, Maybe(..), AdditiveSemigroup((+)), Eq(..), (&&) ) 
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Anchor
+import           Anchor ( Anchor, AnchorGraveyard )
      
  
 data Auction = Auction

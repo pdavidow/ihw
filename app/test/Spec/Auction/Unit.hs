@@ -7,50 +7,55 @@ module Spec.Auction.Unit
     ( tests
     ) where
 
-import           Cardano.Crypto.Hash                as Crypto
-import           Control.Lens                       hiding (elements)
-import           Control.Monad                      (void, when)
-import qualified Control.Monad.Freer                as Freer
-import qualified Control.Monad.Freer.Error          as Freer
-import           Control.Monad.Freer.Extras.Log     (LogLevel (..))
-import           Control.Monad.Freer.Extras as Extras
+import           Cardano.Crypto.Hash as Crypto ( hashToBytes, hashWith, Blake2b_256 )
+import           Control.Lens ( (&), (.~) )
+import           Control.Monad                      (void)
+import           Control.Monad.Freer.Extras as Extras ( logInfo )
 import           Data.Default                       (Default (def))
-import           Data.Either ( fromRight )
 import qualified Data.Map as Map
 import           Data.Monoid                        (Last (..))
 import qualified Data.Text as T
 
-import           Ledger                             (Ada, Slot (..), TokenName, Value)
+import           Ledger                             (TokenName, Value)
 import qualified Ledger.Ada                         as Ada
-import           Plutus.Contract                    hiding (currentSlot)
-import           Plutus.Contract.Test               hiding (not)
-import qualified Streaming.Prelude                  as S
-import qualified Wallet.Emulator.Folds              as Folds
-import qualified Wallet.Emulator.Stream             as Stream
-import           Wallet.Types
 
-import           Ledger.Ada
+import           Plutus.Contract.Test
+                        ( (.&&.),
+                        assertNoFailedTransactions,
+                        checkPredicateOptions,
+                        defaultCheckOptions,
+                        emulatorConfig,
+                        w10,
+                        w2,
+                        w3,
+                        w4,
+                        w5,
+                        w6,
+                        w7,
+                        w8,
+                        walletFundsChange,
+                        walletPubKeyHash,
+                        Wallet )
+
 import           Ledger.TimeSlot                    (SlotConfig)
 import qualified Ledger.TimeSlot                    as TimeSlot
 import qualified Ledger.Value                       as Value
-import           Plutus.Contract.Test 
-import           Plutus.Contract.Test.ContractModel
+
+import           Plutus.Contract.Test.ContractModel ()
 import qualified Plutus.Trace.Emulator          as Trace  
 import           PlutusTx.Monoid                    (inv)
 import qualified PlutusTx.Prelude                   as PlutusTx
 
-import           Test.QuickCheck                    hiding ((.&&.))
-import           Test.Tasty
-import           Test.Tasty.QuickCheck              (testProperty)
+import           Test.Tasty ( TestTree, testGroup )
 
-import           Anchor
+import           Anchor ( Anchor, AnchorGraveyard(..) )
 import           Auction.Offchain 
 import           Auction.Share
 
 
 walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF, walletGraveyard :: Wallet 
-walletSeller    = w2 -- W7ce812d
-walletBidderA   = w3 -- Wc30efb7
+walletSeller    = w2 
+walletBidderA   = w3 
 walletBidderB   = w4 
 walletBidderC   = w5 
 walletBidderD   = w6 

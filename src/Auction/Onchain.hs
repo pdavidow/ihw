@@ -1,23 +1,10 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving  #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE BangPatterns #-}
 
 module Auction.Onchain
     ( auctionAddress
@@ -28,25 +15,45 @@ module Auction.Onchain
     )    
     where
 
-import           Data.Aeson.Types (Value(Bool))
-import qualified Data.ByteString.Lazy  as LB
-import qualified Data.ByteString.Short as SBS
-import           Codec.Serialise       ( serialise )
-
 import           Ledger
-import           Ledger.Ada           as Ada
+                    ( pubKeyHashAddress,
+                    scriptHashAddress,
+                    findDatum,
+                    getContinuingOutputs,
+                    contains,
+                    from,
+                    to,
+                    Address,
+                    ScriptContext(scriptContextTxInfo),
+                    TxInInfo(txInInfoResolved),
+                    TxInfo(txInfoInputs, txInfoValidRange, txInfoOutputs),
+                    PubKeyHash,
+                    Datum(Datum),
+                    Validator,
+                    ValidatorHash,
+                    TxOut(txOutDatumHash, txOutValue, txOutAddress),
+                    Value )
+import           Ledger.Ada as Ada ( lovelaceValueOf )
 
-import qualified Plutus.V1.Ledger.Scripts as Plutus
-import           Cardano.Api.Shelley (PlutusScript (..), PlutusScriptV1)
 import qualified Ledger.Typed.Scripts as Scripts
-import qualified Ledger.Value as Value
-import qualified PlutusTx
-import           PlutusTx.Prelude 
 
-import           Anchor 
--- import           Auction.TypesAuctionRedeemer
-import           Auction.Share
--- import           Auction.Utility ( info, isCorrectSlotRange, isValuePaidTo )
+import qualified PlutusTx
+import           PlutusTx.Prelude
+                    ( Bool(..),
+                    Integer,
+                    Maybe(Just, Nothing),
+                    AdditiveSemigroup((+)),
+                    Eq((==)),
+                    Ord((>=)),
+                    Semigroup((<>)),
+                    ($),
+                    (.),
+                    (&&),
+                    traceError,
+                    traceIfFalse ) 
+
+import           Anchor ( anchorValue ) 
+import           Auction.Share ( auctionedTokenValue, minBid, minLovelace, Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..) )
 
 
 data Auctioning

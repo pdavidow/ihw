@@ -12,26 +12,50 @@ module Auction.Offchain
     )
     where
   
-import           Control.Monad 
+import           Control.Monad ( void, when ) 
 import qualified Data.Map as Map
-import           Data.Maybe ( fromMaybe ) 
 import           Data.Monoid (Last (..))
 import qualified Data.Text as T
 import           Text.Printf (printf)
 
 import           Ledger
-import           Ledger.Ada           as Ada
+                    ( getCardanoTxId,
+                    toTxOut,
+                    from,
+                    to,
+                    ChainIndexTxOut,
+                    Redeemer(Redeemer),
+                    TxOut(txOutValue),
+                    TxOutRef )
+import           Ledger.Ada as Ada ( lovelaceValueOf )
 import qualified Ledger.Constraints as Constraints
 
 import           Plutus.ChainIndex.Tx ( ChainIndexTx(_citxData) )
 import           Plutus.Contract
+                    ( Contract,
+                    type (.\/),
+                    Endpoint,
+                    Promise(awaitPromise),
+                    endpoint,
+                    throwError,
+                    awaitTime,
+                    awaitTxConfirmed,
+                    ownPubKeyHash,
+                    submitTxConstraints,
+                    submitTxConstraintsWith,
+                    utxosTxOutTxAt,
+                    mapError,
+                    select,
+                    logError,
+                    logInfo,
+                    tell )
 import qualified PlutusTx
-import           Ledger.Value ( assetClassValue, assetClassValueOf ) 
+import           Ledger.Value ( assetClassValueOf ) 
 import qualified Plutus.Contracts.Currency as Currency
 
-import           Anchor
-import           Auction.Onchain                   
-import           Auction.Share
+import           Anchor ( anchorAsset, anchorTokenName, anchorValue, Anchor(..), AnchorGraveyard(..) )
+import           Auction.Onchain ( auctionAddress, auctionValidator, typedAuctionValidator, typedValidator )                   
+import           Auction.Share ( auctionDatum, auctionedTokenValue, minBid, minLovelace, Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), CloseParams(..), BidParams(..), StartParams(..) )
 
 
 type AuctionSchema =
