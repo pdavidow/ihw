@@ -175,7 +175,7 @@ tests = testGroup "Auction unit"
 
     ,  checkPredicateOptions
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
-        "1 bid at minimal bid, niether registered nor approved"
+        "1 bid at minimal bid, neither registered nor approved"
         ( assertNoFailedTransactions    
         .&&. walletFundsChange walletSeller mempty
         .&&. walletFundsChange walletBidderA mempty                         
@@ -204,7 +204,7 @@ tests = testGroup "Auction unit"
                     { cpAnchorGraveyard = anchorGraveyard
                     , cpAnchor = anchor
                     }                  
-            Trace.callEndpoint @"close" hSeller closeParams       
+            Trace.callEndpoint @"close" hSeller closeParams        
             void $ Trace.waitUntilTime $ spDeadline startParams    
             void $ Trace.waitNSlots 5         
 
@@ -284,7 +284,7 @@ tests = testGroup "Auction unit"
                     , bpAnchor = anchor
                     }
             Trace.callEndpoint @"bid" hBidderA bidParams 
-            void $ Trace.waitNSlots 5        
+            void $ Trace.waitNSlots 5       
 
             let closeParams = CloseParams 
                     { cpAnchorGraveyard = anchorGraveyard

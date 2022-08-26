@@ -220,6 +220,13 @@ bid BidParams{..} = do
 
 close :: CloseParams -> Contract w AuctionSchema T.Text ()
 close CloseParams{..} = do       
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
     logInfo @String $ printf "STARTED CLOSE"  
     mbX <- findViaAnchor cpAnchor
     (oref, o, d@AuctionDatum{..}) <- case mbX of

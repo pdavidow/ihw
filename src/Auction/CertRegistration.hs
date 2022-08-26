@@ -6,7 +6,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-
+ 
 module Auction.CertRegistration
     ( CertRegistration -- hide constructor
     , certifyRegisteree
