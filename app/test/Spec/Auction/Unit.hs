@@ -294,15 +294,7 @@ tests = testGroup "Auction unit"
             Trace.callEndpoint @"start" hSeller startParams   
             anchor <- getAnchor hSeller 
 
-            void $ Trace.waitNSlots 5    
-
-            let bidParamsA = BidParams
-                    { bpBid    = 200_000_000
-                    , bpAnchor = anchor
-                    }
-            Trace.callEndpoint @"bid" hBidderA bidParamsA  
-
-            void $ Trace.waitNSlots 5     
+            void $ Trace.waitNSlots 5      
 
             let registerParams = RegisterParams 
                     { rpAnchor = anchor
@@ -323,6 +315,14 @@ tests = testGroup "Auction unit"
             Trace.callEndpoint @"approve" hSeller approveParams                     
 
             void $ Trace.waitNSlots 5  
+
+            let bidParamsA = BidParams
+                    { bpBid    = 200_000_000
+                    , bpAnchor = anchor
+                    }
+            Trace.callEndpoint @"bid" hBidderA bidParamsA  
+
+            void $ Trace.waitNSlots 5               
 
             let bidParamsB = BidParams
                     { bpBid    = 200_000_000 - 1
