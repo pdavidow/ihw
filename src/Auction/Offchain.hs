@@ -12,33 +12,55 @@ module Auction.Offchain
     )
     where
   
-import           Control.Monad 
+import           Control.Monad ( unless, when, void ) 
 import qualified Data.Map as Map
-import           Data.Maybe ( fromMaybe ) 
 import           Data.Monoid (Last (..))
 import qualified Data.Text as T
 import           Text.Printf (printf)
 
 import           Ledger
-import           Ledger.Ada           as Ada
+                    ( toTxOut,
+                    from,
+                    to,
+                    getCardanoTxId,
+                    TxOut(txOutValue),
+                    Redeemer(Redeemer),
+                    ChainIndexTxOut,
+                    TxOutRef )
+import           Ledger.Ada as Ada ( lovelaceValueOf )
 import qualified Ledger.Constraints as Constraints
-
 import           Plutus.ChainIndex.Tx ( ChainIndexTx(_citxData) )
 import           Plutus.Contract
+                    ( utxosTxOutTxAt,
+                    mapError,
+                    logError,
+                    submitTxConstraintsWith,
+                    logInfo,
+                    tell,
+                    awaitTxConfirmed,
+                    submitTxConstraints,
+                    ownPubKeyHash,
+                    endpoint,
+                    select,
+                    type (.\/),
+                    Endpoint,
+                    throwError,
+                    Promise(awaitPromise),
+                    Contract )
 import qualified PlutusTx
 import qualified PlutusTx.AssocMap as AssocMap
-import           Ledger.Value ( assetClassValue, assetClassValueOf ) 
+import           Ledger.Value ( assetClassValueOf ) 
 import qualified Plutus.Contracts.Currency as Currency
 
-import           Anchor
-import           Auction.BidderStatus 
-import           Auction.BidderStatusUtil
+import           Anchor ( anchorAsset, anchorTokenName, anchorValue, AnchorGraveyard(..), Anchor(Anchor) )
+import           Auction.BidderStatus ( registerBidder, approveBidders ) 
+import           Auction.BidderStatusUtil ( isBidderApproved )
 import qualified Auction.CertApprovals as CA
 import qualified Auction.CertRegistration as CR
-import           Auction.TypesNonCertBidderStatus
-import           Auction.Onchain                   
-import           Auction.Share
-import           Auction.Types
+import           Auction.TypesNonCertBidderStatus ( NotRegistereds(..), AlreadyApproveds(..) )
+import           Auction.Onchain ( auctionAddress, auctionValidator, typedAuctionValidator, typedValidator )                   
+import           Auction.Share ( auctionDatum, minBid, minLovelace, auctionedTokenValue )
+import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), CloseParams(..), BidParams(..), ApproveParams(..), RegisterParams(..), StartParams(..) )
 
 
 type AuctionSchema =
@@ -205,10 +227,7 @@ close CloseParams{..} = do
             logError e
             throwError e
         Just x -> pure x
-    logInfo @String $ printf "found auction utxo with datum %s" (show d)         
-
-    -- todo
-    -- void $ awaitTime $ aDeadline adAuction ??? ######################################            
+    logInfo @String $ printf "found auction utxo with datum %s" (show d)              
  
     let t      = auctionedTokenValue adAuction
         r      = Redeemer $ PlutusTx.toBuiltinData Close
