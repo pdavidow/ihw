@@ -110,7 +110,7 @@ start StartParams{..} = do
     tell $ Last $ Just anchor -- broadcasted only after tx confirmed
 
     logInfo @String $ printf "started auction %s for value-with-token %s" (show a) (show v)
-
+   
 
 register :: RegisterParams -> Contract w AuctionSchema T.Text ()
 register RegisterParams{..} = do
@@ -143,7 +143,7 @@ register RegisterParams{..} = do
 
     logInfo @String $ printf "registered bidder %s" $ show pkh
 
-
+ 
 approve :: ApproveParams -> Contract w AuctionSchema T.Text ()
 approve ApproveParams{..} = do
     when (null apApprovals) $ throwError $ T.pack "list may not be empty" 
@@ -179,7 +179,7 @@ approve ApproveParams{..} = do
 
     logInfo @String $ printf "approved bidders %s" $ show caPkhs
 
-
+  
 bid :: BidParams -> Contract w AuctionSchema T.Text ()
 bid BidParams{..} = do 
     mbX <- findViaAnchor bpAnchor
@@ -219,7 +219,15 @@ bid BidParams{..} = do
 
 
 close :: CloseParams -> Contract w AuctionSchema T.Text ()
-close CloseParams{..} = do         
+close CloseParams{..} = do       
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "=========================" 
+    logInfo @String $ printf "STARTED CLOSE"  
     mbX <- findViaAnchor cpAnchor
     (oref, o, d@AuctionDatum{..}) <- case mbX of
         Nothing -> do

@@ -30,6 +30,7 @@ library
                      , Auction.Onchain
                      , Auction.Share
                      , Auction.Status
+                     , Auction.Synonyms                     
                      , Auction.Types
                      , Auction.TypesNonCertBidderStatus
 
@@ -73,7 +74,7 @@ test-suite spectests
   main-is:             Spec.hs
   hs-source-dirs:      app/test
   other-modules:       Spec.Auction.Unit
-                      --  , Spec.Auction.Trace
+                       , Spec.Auction.Trace
  
 
   default-language:    Haskell2010
