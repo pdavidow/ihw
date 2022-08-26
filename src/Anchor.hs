@@ -1,10 +1,7 @@
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -23,7 +20,7 @@ module Anchor
 
 import           Data.Aeson (FromJSON, ToJSON)
 import           GHC.Generics (Generic)
-import qualified Prelude as H--askell -- todo use P instead
+import qualified Prelude as P
 import           Ledger
                     ( ownHash,
                     valueLockedBy,
@@ -46,7 +43,7 @@ import           Schema (ToSchema)
 
 
 newtype Anchor = Anchor {unAnchor :: CurrencySymbol}
-    deriving stock (H.Eq, H.Show, Generic)
+    deriving stock (P.Eq, P.Show, Generic)
     deriving anyclass (ToJSON, FromJSON, ToSchema)    
     deriving newtype (Eq)
 
@@ -55,7 +52,7 @@ PlutusTx.makeLift ''Anchor
 
 
 newtype AnchorGraveyard  = AnchorGraveyard {unAnchorGraveyard :: PubKeyHash}
-    deriving stock (H.Eq, H.Show, Generic)
+    deriving stock (P.Eq, P.Show, Generic)
     deriving anyclass (ToJSON, FromJSON, ToSchema)    
     deriving newtype (Eq)
 
