@@ -32,6 +32,7 @@ import qualified Plutus.Contracts.Currency as Currency
 
 import           Anchor
 import           Auction.BidderStatus 
+import           Auction.BidderStatusUtil
 import qualified Auction.CertApprovals as CA
 import qualified Auction.CertRegistration as CR
 import           Auction.TypesNonCertBidderStatus
