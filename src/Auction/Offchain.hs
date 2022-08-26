@@ -110,7 +110,7 @@ start StartParams{..} = do
     tell $ Last $ Just anchor -- broadcasted only after tx confirmed
 
     logInfo @String $ printf "started auction %s for value-with-token %s" (show a) (show v)
-
+ 
 
 register :: RegisterParams -> Contract w AuctionSchema T.Text ()
 register RegisterParams{..} = do
