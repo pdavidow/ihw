@@ -18,7 +18,7 @@ NOTES
 
 2) Introduced Anchor such that auctioned NFT only serves one purpose. 
 
-3) Proliferation of modules is mostly due to avoidance of cyclic dependencies.
+3) Proliferation of modules is partly due to avoidance of cyclic dependencies.
 
 4) Error handling is not robust, giving inconsistent results. For example, unit test "2 bids: First lower than min, second at min, yes approved upfront" works, but commented-out test "1 bid at min, not registered but yes approved upfront" simply stops (using same "throwError") and never gets to close (shown in Spec.Auction.Trace.test1).
 ---
