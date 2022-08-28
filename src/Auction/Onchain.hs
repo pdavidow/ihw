@@ -60,6 +60,7 @@ import           Auction.BidderStatusUtil ( isBidderRegistered, isBidderApproved
 import qualified Auction.CertApprovals as CA
 import qualified Auction.CertRegistration as CR
 import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
+import           Auction.Status ( Status(..) )
 import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..) )
 
 
@@ -195,9 +196,10 @@ mkAuctionValidator ad redeemer ctx =
 
     correctRegisterOutputDatum :: PubKeyHash -> Bool
     correctRegisterOutputDatum pkh = 
-        (adAuction outputDatum == auction {}) &&
+        (adAuction outputDatum == auction {aBidders = aBidders'}) &&
         (adHighestBid outputDatum == adHighestBid ad) &&
         (adAnchor outputDatum == adAnchor ad)
+            where aBidders' = AssocMap.insert pkh Registered $ aBidders auction
 
     correctBidOutputDatum :: Bid -> Bool
     correctBidOutputDatum b = 
