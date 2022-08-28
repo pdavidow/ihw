@@ -48,6 +48,7 @@ import           PlutusTx.Prelude
                     ($),
                     (.),
                     (&&),
+                    maybe,
                     not,
                     all,
                     null,
@@ -101,20 +102,23 @@ mkAuctionValidator ad redeemer ctx =
     case redeemer of
         Register cr ->
             traceIfFalse "bidder is seller" (not $ isSeller crPkh) &&
-            traceIfFalse "bidder already registered or approved" (not $ isBidderAtLeastRegistered crPkh)
+            traceIfFalse "bidder already registered or approved" (not $ isBidderAtLeastRegistered crPkh) &&
+            traceIfFalse "wrong register output datum" (correctRegisterOutputDatum crPkh) &&
+            traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
             where crPkh = CR.pkhFor cr
 
         Approve sellerPkh ca ->
             traceIfFalse "approver is not seller" (isSeller sellerPkh) &&
             traceIfFalse "empty list" (not $ null caPkhs) &&
-            traceIfFalse "not all are registered" (isAllRegisterd caPkhs)
+            traceIfFalse "not all are registered" (isAllRegisterd caPkhs) &&
+            traceIfFalse "wrong approve output value" correctBidderStatusOutputValue              
             where caPkhs = CA.pkhsFor ca
 
         MkBid b@Bid{..} ->
             traceIfFalse "bidder not approved" (isBidderApproved (aBidders auction) bBidder) &&
             traceIfFalse "bid too low" (sufficientBid bBid) &&
-            traceIfFalse "wrong output datum" (correctBidOutputDatum b) &&
-            traceIfFalse "wrong output value" (correctBidOutputValue bBid) &&
+            traceIfFalse "wrong bid output datum" (correctBidOutputDatum b) &&
+            traceIfFalse "wrong bid output value" (correctBidOutputValue bBid) &&
             traceIfFalse "wrong refund" correctBidRefund &&
             traceIfFalse "too late" correctBidSlotRange
 
@@ -182,6 +186,11 @@ mkAuctionValidator ad redeemer ctx =
                     Just ad' -> (o, ad')
                     Nothing  -> traceError "error decoding data"
         _   -> traceError "expected exactly one continuing output"
+
+
+    correctBidderStatusOutputValue  :: Bool
+    correctBidderStatusOutputValue =
+        txOutValue ownOutput == anchorValue (adAnchor ad) <> tokenValue <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid (adHighestBid ad))
 
     correctBidOutputDatum :: Bid -> Bool
     correctBidOutputDatum b = (adAuction outputDatum == auction)   &&
