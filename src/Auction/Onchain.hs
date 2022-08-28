@@ -195,12 +195,15 @@ mkAuctionValidator ad redeemer ctx =
 
     correctRegisterOutputDatum :: PubKeyHash -> Bool
     correctRegisterOutputDatum pkh = 
-
+        (adAuction outputDatum == auction {}) &&
+        (adHighestBid outputDatum == adHighestBid ad) &&
+        (adAnchor outputDatum == adAnchor ad)
 
     correctBidOutputDatum :: Bid -> Bool
-    correctBidOutputDatum b = (adAuction outputDatum == auction)   &&
-                              (adHighestBid outputDatum == Just b) &&
-                              (adAnchor outputDatum == adAnchor ad)
+    correctBidOutputDatum b = 
+        (adAuction outputDatum == auction) &&
+        (adHighestBid outputDatum == Just b) &&
+        (adAnchor outputDatum == adAnchor ad)
 
     correctBidOutputValue :: Integer -> Bool
     correctBidOutputValue amount =
