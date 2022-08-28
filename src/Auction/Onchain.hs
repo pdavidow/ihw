@@ -16,23 +16,23 @@ module Auction.Onchain
     where
 
 import           Ledger
-                    ( from,
-                    to,
-                    Datum(Datum),
-                    TxOut(txOutDatumHash, txOutValue, txOutAddress),
-                    Address,
-                    Validator,
-                    Value,
-                    PubKeyHash (PubKeyHash),
-                    pubKeyHashAddress,
+                    ( pubKeyHashAddress,
                     scriptHashAddress,
                     findDatum,
                     getContinuingOutputs,
                     contains,
+                    from,
+                    to,
+                    Address,
                     ScriptContext(scriptContextTxInfo),
                     TxInInfo(txInInfoResolved),
                     TxInfo(txInfoInputs, txInfoValidRange, txInfoOutputs),
-                    ValidatorHash )
+                    PubKeyHash,
+                    Datum(Datum),
+                    Validator,
+                    ValidatorHash,
+                    TxOut(txOutDatumHash, txOutValue, txOutAddress),
+                    Value )
 import           Ledger.Ada as Ada ( lovelaceValueOf )
 import qualified PlutusTx.AssocMap as AssocMap
 import qualified Ledger.Typed.Scripts as Scripts  
@@ -41,20 +41,19 @@ import           PlutusTx.Prelude
                     ( Bool(..),
                     Integer,
                     Maybe(Just, Nothing),
-                    AdditiveSemigroup((+)),
-                    Eq((==)),
-                    Ord((>=)),
-                    Semigroup((<>)),
                     ($),
                     (.),
                     (&&),
-                    maybe,
-                    foldr,
                     not,
                     all,
                     null,
+                    maybe,
                     traceError,
-                    traceIfFalse ) 
+                    traceIfFalse,
+                    Eq((==)),
+                    AdditiveSemigroup((+)),
+                    Ord((>=)),
+                    Semigroup((<>)) )
 
 import           Anchor ( anchorValue ) 
 import           Auction.BidderStatus ( approveBidders, registerBidder )
@@ -62,7 +61,6 @@ import           Auction.BidderStatusUtil ( isBidderRegistered, isBidderApproved
 import qualified Auction.CertApprovals as CA
 import qualified Auction.CertRegistration as CR
 import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
-import           Auction.Status ( Status(..) )
 import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..) )
 
 
