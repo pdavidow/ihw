@@ -47,6 +47,7 @@ data Auction = Auction
 instance Eq Auction where
     {-# INLINABLE (==) #-}
     a == b = (aSeller   a == aSeller   b) &&
+             (aBidders  a == aBidders  b) &&    
              (aDeadline a == aDeadline b) &&
              (aMinBid   a == aMinBid   b) &&
              (aCurrency a == aCurrency b) &&

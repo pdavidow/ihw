@@ -16,23 +16,23 @@ module Auction.Onchain
     where
 
 import           Ledger
-                    ( from,
-                    to,
-                    Datum(Datum),
-                    TxOut(txOutDatumHash, txOutValue, txOutAddress),
-                    Address,
-                    Validator,
-                    Value,
-                    PubKeyHash,
-                    pubKeyHashAddress,
+                    ( pubKeyHashAddress,
                     scriptHashAddress,
                     findDatum,
                     getContinuingOutputs,
                     contains,
+                    from,
+                    to,
+                    Address,
                     ScriptContext(scriptContextTxInfo),
                     TxInInfo(txInInfoResolved),
                     TxInfo(txInfoInputs, txInfoValidRange, txInfoOutputs),
-                    ValidatorHash )
+                    PubKeyHash,
+                    Datum(Datum),
+                    Validator,
+                    ValidatorHash,
+                    TxOut(txOutDatumHash, txOutValue, txOutAddress),
+                    Value )
 import           Ledger.Ada as Ada ( lovelaceValueOf )
 import qualified PlutusTx.AssocMap as AssocMap
 import qualified Ledger.Typed.Scripts as Scripts  
@@ -41,20 +41,22 @@ import           PlutusTx.Prelude
                     ( Bool(..),
                     Integer,
                     Maybe(Just, Nothing),
-                    AdditiveSemigroup((+)),
-                    Eq((==)),
-                    Ord((>=)),
-                    Semigroup((<>)),
                     ($),
                     (.),
                     (&&),
                     not,
                     all,
                     null,
+                    maybe,
                     traceError,
-                    traceIfFalse ) 
+                    traceIfFalse,
+                    Eq((==)),
+                    AdditiveSemigroup((+)),
+                    Ord((>=)),
+                    Semigroup((<>)) )
 
 import           Anchor ( anchorValue ) 
+import           Auction.BidderStatus ( approveBidders, registerBidder )
 import           Auction.BidderStatusUtil ( isBidderRegistered, isBidderApproved )
 import qualified Auction.CertApprovals as CA
 import qualified Auction.CertRegistration as CR
@@ -100,21 +102,25 @@ mkAuctionValidator ad redeemer ctx =
 
     case redeemer of
         Register cr ->
-            traceIfFalse "bidder is seller" (not $ isSeller crPkh) &&
-            traceIfFalse "bidder already registered or approved" (not $ isBidderAtLeastRegistered crPkh)
+            traceIfFalse "registeree is seller" (not $ isSeller crPkh) &&
+            traceIfFalse "registeree already registered or approved" (not $ isRegistereeAtLeastRegistered crPkh) &&
+            traceIfFalse "wrong register output datum" (correctRegisterOutputDatum cr) &&
+            traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
             where crPkh = CR.pkhFor cr
 
         Approve sellerPkh ca ->
             traceIfFalse "approver is not seller" (isSeller sellerPkh) &&
             traceIfFalse "empty list" (not $ null caPkhs) &&
-            traceIfFalse "not all are registered" (isAllRegisterd caPkhs)
+            traceIfFalse "not all are registered" (isAllRegisterd caPkhs) &&
+            traceIfFalse "wrong approve output datum" (correctApproveOutputDatum ca) &&            
+            traceIfFalse "wrong approve output value" correctBidderStatusOutputValue              
             where caPkhs = CA.pkhsFor ca
 
         MkBid b@Bid{..} ->
             traceIfFalse "bidder not approved" (isBidderApproved (aBidders auction) bBidder) &&
             traceIfFalse "bid too low" (sufficientBid bBid) &&
-            traceIfFalse "wrong output datum" (correctBidOutputDatum b) &&
-            traceIfFalse "wrong output value" (correctBidOutputValue bBid) &&
+            traceIfFalse "wrong bid output datum" (correctBidOutputDatum b) &&
+            traceIfFalse "wrong bid output value" (correctBidOutputValue bBid) &&
             traceIfFalse "wrong refund" correctBidRefund &&
             traceIfFalse "too late" correctBidSlotRange
 
@@ -162,8 +168,8 @@ mkAuctionValidator ad redeemer ctx =
     isSeller :: PubKeyHash -> Bool
     isSeller pkh = aSeller auction == pkh      
 
-    isBidderAtLeastRegistered :: PubKeyHash -> Bool      
-    isBidderAtLeastRegistered pkh = AssocMap.member pkh $ aBidders auction
+    isRegistereeAtLeastRegistered :: PubKeyHash -> Bool      
+    isRegistereeAtLeastRegistered pkh = AssocMap.member pkh $ aBidders auction
 
     isAllRegisterd :: [PubKeyHash] -> Bool 
     isAllRegisterd = all $ isBidderRegistered $ aBidders auction
@@ -183,9 +189,30 @@ mkAuctionValidator ad redeemer ctx =
                     Nothing  -> traceError "error decoding data"
         _   -> traceError "expected exactly one continuing output"
 
+
+    correctBidderStatusOutputValue  :: Bool
+    correctBidderStatusOutputValue =
+        txOutValue ownOutput == anchorValue (adAnchor ad) <> tokenValue <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid (adHighestBid ad))
+
+    correctRegisterOutputDatum :: CR.CertRegistration -> Bool
+    correctRegisterOutputDatum x = 
+        (adAuction outputDatum == auction {aBidders = aBidders'}) &&
+        (adHighestBid outputDatum == adHighestBid ad) &&
+        (adAnchor outputDatum == adAnchor ad)
+            where aBidders' = registerBidder (aBidders auction) x
+
+    correctApproveOutputDatum :: CA.CertApprovals -> Bool
+    correctApproveOutputDatum x = 
+        (adAuction outputDatum == auction {aBidders = aBidders'}) &&
+        (adHighestBid outputDatum == adHighestBid ad) &&
+        (adAnchor outputDatum == adAnchor ad)
+            where aBidders' = approveBidders (aBidders auction) x
+
     correctBidOutputDatum :: Bid -> Bool
-    correctBidOutputDatum b = (adAuction outputDatum == auction)   &&
-                              (adHighestBid outputDatum == Just b)
+    correctBidOutputDatum b = 
+        (adAuction outputDatum == auction) &&
+        (adHighestBid outputDatum == Just b) &&
+        (adAnchor outputDatum == adAnchor ad)
 
     correctBidOutputValue :: Integer -> Bool
     correctBidOutputValue amount =
