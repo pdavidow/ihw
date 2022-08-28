@@ -49,6 +49,7 @@ import           PlutusTx.Prelude
                     (.),
                     (&&),
                     maybe,
+                    foldr,
                     not,
                     all,
                     null,
@@ -102,8 +103,8 @@ mkAuctionValidator ad redeemer ctx =
 
     case redeemer of
         Register cr ->
-            traceIfFalse "bidder is seller" (not $ isSeller crPkh) &&
-            traceIfFalse "bidder already registered or approved" (not $ isBidderAtLeastRegistered crPkh) &&
+            traceIfFalse "registeree is seller" (not $ isSeller crPkh) &&
+            traceIfFalse "registeree already registered or approved" (not $ isRegistereeAtLeastRegistered crPkh) &&
             traceIfFalse "wrong register output datum" (correctRegisterOutputDatum crPkh) &&
             traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
             where crPkh = CR.pkhFor cr
@@ -112,6 +113,7 @@ mkAuctionValidator ad redeemer ctx =
             traceIfFalse "approver is not seller" (isSeller sellerPkh) &&
             traceIfFalse "empty list" (not $ null caPkhs) &&
             traceIfFalse "not all are registered" (isAllRegisterd caPkhs) &&
+            traceIfFalse "wrong approve output datum" (correctApproveOutputDatum caPkhs) &&            
             traceIfFalse "wrong approve output value" correctBidderStatusOutputValue              
             where caPkhs = CA.pkhsFor ca
 
@@ -167,8 +169,8 @@ mkAuctionValidator ad redeemer ctx =
     isSeller :: PubKeyHash -> Bool
     isSeller pkh = aSeller auction == pkh      
 
-    isBidderAtLeastRegistered :: PubKeyHash -> Bool      
-    isBidderAtLeastRegistered pkh = AssocMap.member pkh $ aBidders auction
+    isRegistereeAtLeastRegistered :: PubKeyHash -> Bool      
+    isRegistereeAtLeastRegistered pkh = AssocMap.member pkh $ aBidders auction
 
     isAllRegisterd :: [PubKeyHash] -> Bool 
     isAllRegisterd = all $ isBidderRegistered $ aBidders auction
@@ -193,13 +195,19 @@ mkAuctionValidator ad redeemer ctx =
     correctBidderStatusOutputValue =
         txOutValue ownOutput == anchorValue (adAnchor ad) <> tokenValue <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid (adHighestBid ad))
 
-
     correctRegisterOutputDatum :: PubKeyHash -> Bool
     correctRegisterOutputDatum pkh = 
         (adAuction outputDatum == auction {aBidders = aBidders'}) &&
         (adHighestBid outputDatum == adHighestBid ad) &&
         (adAnchor outputDatum == adAnchor ad)
             where aBidders' = AssocMap.insert pkh Registered $ aBidders auction
+
+    correctApproveOutputDatum :: [PubKeyHash] -> Bool
+    correctApproveOutputDatum pkhs = 
+        (adAuction outputDatum == auction {aBidders = aBidders'}) &&
+        (adHighestBid outputDatum == adHighestBid ad) &&
+        (adAnchor outputDatum == adAnchor ad)
+            where aBidders' = foldr (`AssocMap.insert` Approved) (aBidders auction) pkhs
 
     correctBidOutputDatum :: Bid -> Bool
     correctBidOutputDatum b = 
