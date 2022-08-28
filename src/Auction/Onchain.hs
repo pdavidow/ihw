@@ -57,6 +57,7 @@ import           PlutusTx.Prelude
                     traceIfFalse ) 
 
 import           Anchor ( anchorValue ) 
+import           Auction.BidderStatus ( approveBidders, registerBidder )
 import           Auction.BidderStatusUtil ( isBidderRegistered, isBidderApproved )
 import qualified Auction.CertApprovals as CA
 import qualified Auction.CertRegistration as CR
@@ -105,7 +106,7 @@ mkAuctionValidator ad redeemer ctx =
         Register cr ->
             traceIfFalse "registeree is seller" (not $ isSeller crPkh) &&
             traceIfFalse "registeree already registered or approved" (not $ isRegistereeAtLeastRegistered crPkh) &&
-            traceIfFalse "wrong register output datum" (correctRegisterOutputDatum crPkh) &&
+            traceIfFalse "wrong register output datum" (correctRegisterOutputDatum cr) &&
             traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
             where crPkh = CR.pkhFor cr
 
@@ -113,7 +114,7 @@ mkAuctionValidator ad redeemer ctx =
             traceIfFalse "approver is not seller" (isSeller sellerPkh) &&
             traceIfFalse "empty list" (not $ null caPkhs) &&
             traceIfFalse "not all are registered" (isAllRegisterd caPkhs) &&
-            traceIfFalse "wrong approve output datum" (correctApproveOutputDatum caPkhs) &&            
+            traceIfFalse "wrong approve output datum" (correctApproveOutputDatum ca) &&            
             traceIfFalse "wrong approve output value" correctBidderStatusOutputValue              
             where caPkhs = CA.pkhsFor ca
 
@@ -195,19 +196,19 @@ mkAuctionValidator ad redeemer ctx =
     correctBidderStatusOutputValue =
         txOutValue ownOutput == anchorValue (adAnchor ad) <> tokenValue <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid (adHighestBid ad))
 
-    correctRegisterOutputDatum :: PubKeyHash -> Bool
-    correctRegisterOutputDatum pkh = 
+    correctRegisterOutputDatum :: CR.CertRegistration -> Bool
+    correctRegisterOutputDatum x = 
         (adAuction outputDatum == auction {aBidders = aBidders'}) &&
         (adHighestBid outputDatum == adHighestBid ad) &&
         (adAnchor outputDatum == adAnchor ad)
-            where aBidders' = AssocMap.insert pkh Registered $ aBidders auction
+            where aBidders' = registerBidder (aBidders auction) x
 
-    correctApproveOutputDatum :: [PubKeyHash] -> Bool
-    correctApproveOutputDatum pkhs = 
+    correctApproveOutputDatum :: CA.CertApprovals -> Bool
+    correctApproveOutputDatum x = 
         (adAuction outputDatum == auction {aBidders = aBidders'}) &&
         (adHighestBid outputDatum == adHighestBid ad) &&
         (adAnchor outputDatum == adAnchor ad)
-            where aBidders' = foldr (`AssocMap.insert` Approved) (aBidders auction) pkhs
+            where aBidders' = approveBidders (aBidders auction) x
 
     correctBidOutputDatum :: Bid -> Bool
     correctBidOutputDatum b = 
