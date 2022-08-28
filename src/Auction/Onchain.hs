@@ -23,7 +23,7 @@ import           Ledger
                     Address,
                     Validator,
                     Value,
-                    PubKeyHash,
+                    PubKeyHash (PubKeyHash),
                     pubKeyHashAddress,
                     scriptHashAddress,
                     findDatum,
@@ -192,9 +192,15 @@ mkAuctionValidator ad redeemer ctx =
     correctBidderStatusOutputValue =
         txOutValue ownOutput == anchorValue (adAnchor ad) <> tokenValue <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid (adHighestBid ad))
 
+
+    correctRegisterOutputDatum :: PubKeyHash -> Bool
+    correctRegisterOutputDatum pkh = 
+
+
     correctBidOutputDatum :: Bid -> Bool
     correctBidOutputDatum b = (adAuction outputDatum == auction)   &&
-                              (adHighestBid outputDatum == Just b)
+                              (adHighestBid outputDatum == Just b) &&
+                              (adAnchor outputDatum == adAnchor ad)
 
     correctBidOutputValue :: Integer -> Bool
     correctBidOutputValue amount =
