@@ -54,8 +54,8 @@ import qualified Plutus.Contracts.Currency as Currency
 import           Anchor ( anchorAsset, anchorTokenName, anchorValue, AnchorGraveyard(..), Anchor(Anchor) )
 import           Auction.BidderStatus ( registerBidder, approveBidders ) 
 import           Auction.BidderStatusUtil ( isBidderApproved )
-import qualified Auction.CertApprovals as CA
-import qualified Auction.CertRegistration as CR
+import qualified Auction.Approvals as CA
+import qualified Auction.Registration as CR
 import           Auction.TypesNonCertBidderStatus ( NotRegistereds(..), AlreadyApproveds(..) )
 import           Auction.Onchain ( auctionAddress, auctionValidator, typedAuctionValidator, typedValidator )                   
 import           Auction.Share ( auctionDatum, minBid, minLovelace, auctionedTokenValue )

@@ -28,9 +28,7 @@ import qualified Prelude as P
 import           Schema (ToSchema)
 
 import           Anchor ( AnchorGraveyard, Anchor )
-import           Auction.Bidders ( Bidders )
-import qualified Auction.CertApprovals as CA
-import qualified Auction.CertRegistration as CR
+import           Auction.Bidders
 
 
 data Auction = Auction
@@ -70,8 +68,8 @@ PlutusTx.makeLift ''Bid
 
 
 data AuctionAction 
-    = Register !CR.CertRegistration
-    | Approve {aaSeller :: !PubKeyHash, aaCerts :: !CA.CertApprovals}
+    = Register !Registration
+    | Approve PubKeyHash Approvals
     | MkBid !Bid 
     | Close 
     deriving P.Show

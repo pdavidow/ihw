@@ -7,10 +7,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
  
-module Auction.CertRegistration
-    ( CertRegistration -- hide constructor
-    , certifyRegisteree
-    , pkhFor
+module Auction.Registration
+    ( Registration -- hide constructor
+    , validateRegisteree
+    , pkhForRegistration
     ) 
     where
 
@@ -29,21 +29,21 @@ import           Schema (ToSchema)
 import           Auction.Bidders ( Bidders )
 
 
-newtype CertRegistration = CertRegistration PubKeyHash 
+newtype Registration = Registration PubKeyHash 
     deriving stock (P.Eq, P.Ord, P.Show, Generic)
     deriving anyclass (ToJSON, FromJSON, ToSchema)
     deriving newtype (Eq, Ord, PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
 
-PlutusTx.makeLift ''CertRegistration
+PlutusTx.makeLift ''Registration
 
 
-certifyRegisteree :: Bidders -> PubKeyHash -> Either T.Text CertRegistration
-certifyRegisteree b x
+validateRegisteree :: Bidders -> PubKeyHash -> Either T.Text Registration
+validateRegisteree b x
   | isBidderRegistered b x = Left "already registered"
   | isBidderApproved b x = Left "already approved"
-  | otherwise = Right $ CertRegistration x
+  | otherwise = Right $ Registration x
 
 
-{-# INLINABLE pkhFor #-}
-pkhFor :: CertRegistration -> PubKeyHash
-pkhFor (CertRegistration x) = x
+{-# INLINABLE pkhForRegistration #-}
+pkhForRegistration :: Registration -> PubKeyHash
+pkhForRegistration (Registration x) = x

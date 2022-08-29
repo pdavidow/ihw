@@ -1,4 +1,4 @@
-module Auction.Synonyms
+-- module Auction.Synonyms
     -- ( BiddersMap
     -- ) 
     where

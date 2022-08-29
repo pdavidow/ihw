@@ -53,11 +53,7 @@ import           Ledger.Value ( assetClassValueOf )
 import qualified Plutus.Contracts.Currency as Currency
 
 import           Anchor ( anchorAsset, anchorTokenName, anchorValue, AnchorGraveyard(..), Anchor(Anchor) )
-import           Auction.BidderStatus ( registerBidder, approveBidders ) 
-import           Auction.BidderStatusUtil ( isBidderApproved )
-import qualified Auction.CertApprovals as CA
-import qualified Auction.CertRegistration as CR
-import           Auction.TypesNonCertBidderStatus ( NotRegistereds(..), AlreadyApproveds(..) )
+import           Auction.Bidders
 import           Auction.Onchain ( auctionAddress, auctionValidator, typedAuctionValidator, typedValidator )                   
 import           Auction.Share ( auctionDatum, minBid, minLovelace, auctionedTokenValue )
 import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), CloseParams(..), BidParams(..), ApproveParams(..), RegisterParams(..), StartParams(..) )
@@ -123,7 +119,7 @@ register RegisterParams{..} = do
     pkh <- ownPubKeyHash
     when (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "seller may not register" 
 
-    cr <- case CR.certifyRegisteree (aBidders adAuction) pkh of
+    cr <- case validateRegisteree (aBidders adAuction) pkh of
         Left e -> throwError e
         Right x -> pure x
 
@@ -157,8 +153,8 @@ approve ApproveParams{..} = do
     pkh <- ownPubKeyHash
     unless (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "only seller may approve" 
 
-    let (ca, AlreadyApproveds alreadyAs, NotRegistereds notRs) = CA.certifyApprovees (aBidders adAuction) apApprovals
-    let caPkhs = CA.pkhsFor ca
+    let (ca, AlreadyApproveds alreadyAs, NotRegistereds notRs) = validateApprovees (aBidders adAuction) apApprovals
+    let caPkhs = pkhsForApprovals ca
     when (null caPkhs) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
     unless (null notRs) $ logInfo @String $ printf "not registered %s" $ show notRs
     unless (null alreadyAs) $ logInfo @String $ printf "already approved %s" $ show alreadyAs

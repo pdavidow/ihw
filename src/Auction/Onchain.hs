@@ -56,10 +56,7 @@ import           PlutusTx.Prelude
                     Semigroup((<>)) )
 
 import           Anchor ( anchorValue ) 
-import           Auction.BidderStatus ( approveBidders, registerBidder )
-import           Auction.BidderStatusUtil ( isBidderRegistered, isBidderApproved )
-import qualified Auction.CertApprovals as CA
-import qualified Auction.CertRegistration as CR
+import           Auction.Bidders
 import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
 import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..) )
 
@@ -101,20 +98,20 @@ mkAuctionValidator ad redeemer ctx =
     traceIfFalse "wrong input value" correctInputValue &&
 
     case redeemer of
-        Register cr ->
-            traceIfFalse "registeree is seller" (not $ isSeller crPkh) &&
-            traceIfFalse "registeree already registered or approved" (not $ isRegistereeAtLeastRegistered crPkh) &&
-            traceIfFalse "wrong register output datum" (correctRegisterOutputDatum cr) &&
+        Register reg ->
+            traceIfFalse "registeree is seller" (not $ isSeller pkhR) &&
+            traceIfFalse "registeree already registered or approved" (not $ isAtLeastRegistered (aBidders auction) pkhR) &&
+            traceIfFalse "wrong register output datum" (correctRegisterOutputDatum reg) &&
             traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
-            where crPkh = CR.pkhFor cr
+            where pkhR = pkhForRegistration reg
 
-        Approve sellerPkh ca ->
+        Approve sellerPkh app ->
             traceIfFalse "approver is not seller" (isSeller sellerPkh) &&
-            traceIfFalse "empty list" (not $ null caPkhs) &&
-            traceIfFalse "not all are registered" (isAllRegisterd caPkhs) &&
-            traceIfFalse "wrong approve output datum" (correctApproveOutputDatum ca) &&            
+            traceIfFalse "empty list" (not $ null pkhsA) &&
+            traceIfFalse "not all are registered" (isAllRegisterd (aBidders auction) pkhsA) &&
+            traceIfFalse "wrong approve output datum" (correctApproveOutputDatum app) &&            
             traceIfFalse "wrong approve output value" correctBidderStatusOutputValue              
-            where caPkhs = CA.pkhsFor ca
+            where pkhsA = pkhsForApprovals app
 
         MkBid b@Bid{..} ->
             traceIfFalse "bidder not approved" (isBidderApproved (aBidders auction) bBidder) &&
@@ -168,12 +165,6 @@ mkAuctionValidator ad redeemer ctx =
     isSeller :: PubKeyHash -> Bool
     isSeller pkh = aSeller auction == pkh      
 
-    isRegistereeAtLeastRegistered :: PubKeyHash -> Bool      
-    isRegistereeAtLeastRegistered pkh = AssocMap.member pkh $ aBidders auction
-
-    isAllRegisterd :: [PubKeyHash] -> Bool 
-    isAllRegisterd = all $ isBidderRegistered $ aBidders auction
-
     sufficientBid :: Integer -> Bool
     sufficientBid amount = amount >= minBid ad
 
@@ -194,14 +185,14 @@ mkAuctionValidator ad redeemer ctx =
     correctBidderStatusOutputValue =
         txOutValue ownOutput == anchorValue (adAnchor ad) <> tokenValue <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid (adHighestBid ad))
 
-    correctRegisterOutputDatum :: CR.CertRegistration -> Bool
+    correctRegisterOutputDatum :: Registration -> Bool
     correctRegisterOutputDatum x = 
         (adAuction outputDatum == auction {aBidders = aBidders'}) &&
         (adHighestBid outputDatum == adHighestBid ad) &&
         (adAnchor outputDatum == adAnchor ad)
             where aBidders' = registerBidder (aBidders auction) x
 
-    correctApproveOutputDatum :: CA.CertApprovals -> Bool
+    correctApproveOutputDatum :: Approvals -> Bool
     correctApproveOutputDatum x = 
         (adAuction outputDatum == auction {aBidders = aBidders'}) &&
         (adHighestBid outputDatum == adHighestBid ad) &&
