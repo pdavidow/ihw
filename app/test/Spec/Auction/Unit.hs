@@ -908,6 +908,7 @@ tests = testGroup "Auction unit"
 --             hBidderC <- Trace.activateContractWallet walletBidderC endpoints
 --             hBidderD <- Trace.activateContractWallet walletBidderD endpoints
 --             hBidderE <- Trace.activateContractWallet walletBidderE endpoints
+--             hBidderF <- Trace.activateContractWallet walletBidderE endpoints
 
 --             let startParams = StartParams 
 --                     { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
@@ -1007,7 +1008,7 @@ tests = testGroup "Auction unit"
 --                     { cpAnchorGraveyard = anchorGraveyard
 --                     , cpAnchor = anchor
 --                     }                  
---             Trace.callEndpoint @"close" hSeller closeParams       
+--             Trace.callEndpoint @"close" hBidderF closeParams       
 --             void $ Trace.waitUntilTime $ spDeadline startParams    
 --             void $ Trace.waitNSlots 5               
     ]
