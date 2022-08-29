@@ -251,47 +251,48 @@ tests = testGroup "Auction unit"
             void $ Trace.waitNSlots 5     
 
 
---     ,  checkPredicateOptions
---         (defaultCheckOptions & (emulatorConfig .~ emCfg))
---         "1 bid at min, not registered but yes approved upfront"
---         ( assertNoFailedTransactions    
---         .&&. walletFundsChange walletSeller mempty
---         .&&. walletFundsChange walletBidderA mempty                         
---         ) $ do
---             hSeller <- Trace.activateContractWallet walletSeller endpoints          
---             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
+    ,  checkPredicateOptions
+        (defaultCheckOptions & (emulatorConfig .~ emCfg))
+        "1 bid at min, not registered but yes approved upfront"
+        ( assertNoFailedTransactions    
+        .&&. walletFundsChange walletSeller mempty
+        .&&. walletFundsChange walletBidderA mempty                         
+        ) $ do
+            hSeller <- Trace.activateContractWallet walletSeller endpoints          
+            hBidderA <- Trace.activateContractWallet walletBidderA endpoints
+            hBidderB <- Trace.activateContractWallet walletBidderB endpoints
 
---             let startParams = StartParams 
---                     { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
---                     , spMinBid   = lowestAcceptableBid
---                     , spCurrency = tokenCurrency
---                     , spToken    = tokenName                   
---                     }  
---             Trace.callEndpoint @"start" hSeller startParams   
---             anchor <- getAnchor hSeller 
---             void $ Trace.waitNSlots 5    
+            let startParams = StartParams 
+                    { spDeadline = TimeSlot.scSlotZeroTime slotCfg + 1_000_000
+                    , spMinBid   = lowestAcceptableBid
+                    , spCurrency = tokenCurrency
+                    , spToken    = tokenName                   
+                    }  
+            Trace.callEndpoint @"start" hSeller startParams   
+            anchor <- getAnchor hSeller 
+            void $ Trace.waitNSlots 5    
 
---             let approveParams = ApproveParams
---                     { apApprovals = [walletPubKeyHash walletBidderA]
---                     , apAnchor = anchor
---                     } 
---             Trace.callEndpoint @"approve" hSeller approveParams                     
---             void $ Trace.waitNSlots 5 
+            let approveParams = ApproveParams
+                    { apApprovals = [walletPubKeyHash walletBidderA]
+                    , apAnchor = anchor
+                    } 
+            Trace.callEndpoint @"approve" hSeller approveParams                     
+            void $ Trace.waitNSlots 5 
 
---             let bidParams = BidParams
---                     { bpBid    = lowestAcceptableBid
---                     , bpAnchor = anchor
---                     }
---             Trace.callEndpoint @"bid" hBidderA bidParams 
---             void $ Trace.waitNSlots 5       
+            let bidParams = BidParams
+                    { bpBid    = lowestAcceptableBid
+                    , bpAnchor = anchor
+                    }
+            Trace.callEndpoint @"bid" hBidderA bidParams 
+            void $ Trace.waitNSlots 5       
 
---             let closeParams = CloseParams 
---                     { cpAnchorGraveyard = anchorGraveyard
---                     , cpAnchor = anchor
---                     }                  
---             Trace.callEndpoint @"close" hSeller closeParams       
---             void $ Trace.waitUntilTime $ spDeadline startParams    
---             void $ Trace.waitNSlots 5  
+            let closeParams = CloseParams 
+                    { cpAnchorGraveyard = anchorGraveyard
+                    , cpAnchor = anchor
+                    }                  
+            Trace.callEndpoint @"close" hBidderB closeParams   
+            void $ Trace.waitUntilTime $ spDeadline startParams    
+            void $ Trace.waitNSlots 5  
 
 
     ,  checkPredicateOptions

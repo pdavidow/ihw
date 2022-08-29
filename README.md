@@ -18,8 +18,6 @@ Create repo with similar functionality.  Use unit tests, not playground.
 
 2) Introduced `Anchor` such that auctioned NFT only serves one purpose. 
 
-3) Error handling is not robust, giving inconsistent results. For example, unit test _2 bids: First lower than min, second at min, yes approved upfront_ works, but commented-out test _1 bid at min, not registered but yes approved upfront_ simply stops (using same `throwError`) and never gets to close (shown in `Spec.Auction.Trace.test1`).
-
 
 ## USAGE
 `cabal run spectests`
