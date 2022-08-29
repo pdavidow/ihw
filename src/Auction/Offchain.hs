@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
@@ -48,12 +47,11 @@ import           Plutus.Contract
                     Promise(awaitPromise),
                     Contract )
 import qualified PlutusTx
-import qualified PlutusTx.AssocMap as AssocMap
 import           Ledger.Value ( assetClassValueOf ) 
 import qualified Plutus.Contracts.Currency as Currency
 
 import           Anchor ( anchorAsset, anchorTokenName, anchorValue, AnchorGraveyard(..), Anchor(Anchor) )
-import           Auction.Bidders
+import           Auction.Bidders ( NotRegistereds(..), AlreadyApproveds(..), pkhsForApprovals, emptyBidders, isBidderApproved, registerBidder, approveBidders, validateRegisteree, validateApprovees )
 import           Auction.Onchain ( auctionAddress, auctionValidator, typedAuctionValidator, typedValidator )                   
 import           Auction.Share ( auctionDatum, minBid, minLovelace, auctionedTokenValue )
 import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), CloseParams(..), BidParams(..), ApproveParams(..), RegisterParams(..), StartParams(..) )

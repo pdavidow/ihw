@@ -34,7 +34,6 @@ import           Ledger
                     TxOut(txOutDatumHash, txOutValue, txOutAddress),
                     Value )
 import           Ledger.Ada as Ada ( lovelaceValueOf )
-import qualified PlutusTx.AssocMap as AssocMap
 import qualified Ledger.Typed.Scripts as Scripts  
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -45,7 +44,6 @@ import           PlutusTx.Prelude
                     (.),
                     (&&),
                     not,
-                    all,
                     null,
                     maybe,
                     traceError,
@@ -56,7 +54,7 @@ import           PlutusTx.Prelude
                     Semigroup((<>)) )
 
 import           Anchor ( anchorValue ) 
-import           Auction.Bidders
+import           Auction.Bidders ( Approvals, Registration, pkhForRegistration, pkhsForApprovals, isBidderApproved, isAllRegisterd, isAtLeastRegistered, registerBidder, approveBidders )
 import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
 import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..) )
 

@@ -33,7 +33,16 @@ import qualified Data.Text as T
 import           GHC.Generics (Generic)
 import           Ledger ( PubKeyHash ) 
 import qualified PlutusTx
-import           PlutusTx.Prelude 
+import           PlutusTx.Prelude
+                    ( otherwise,
+                    Bool,
+                    Maybe(Just),
+                    Either(..),
+                    ($),
+                    (.),
+                    all,
+                    foldr,
+                    Eq(..) ) 
 import qualified PlutusTx.AssocMap as AssocMap
 import qualified Prelude as P   
 import           Schema (ToSchema)
