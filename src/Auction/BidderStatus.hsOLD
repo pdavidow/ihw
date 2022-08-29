@@ -9,15 +9,15 @@ module Auction.BidderStatus
 import qualified PlutusTx.AssocMap as AssocMap
 import           PlutusTx.Prelude ( ($), foldr ) 
 
+import           Auction.Bidders ( Bidders, mapFrom )
 import qualified Auction.CertApprovals as CA
 import qualified Auction.CertRegistration as CR
 import           Auction.Status ( Status(..) )
-import           Auction.Synonyms ( BiddersMap )
 
 
-registerBidder :: BiddersMap -> CR.CertRegistration -> BiddersMap
-registerBidder m x = AssocMap.insert (CR.pkhFor x) Registered m
+registerBidder :: Bidders -> CR.CertRegistration -> Bidders
+registerBidder b x = AssocMap.insert (CR.pkhFor x) Registered (mapFrom b)
 
 
-approveBidders :: BiddersMap -> CA.CertApprovals -> BiddersMap
-approveBidders m x = foldr (`AssocMap.insert` Approved) m $ CA.pkhsFor x
+approveBidders :: Bidders -> CA.CertApprovals -> Bidders
+approveBidders b x = foldr (`AssocMap.insert` Approved) (mapFrom b) $ CA.pkhsFor x

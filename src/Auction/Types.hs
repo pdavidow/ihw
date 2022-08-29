@@ -10,8 +10,6 @@ module Auction.Types
     , AuctionAction(..)
     , AuctionDatum(..)
     , Bid(..)
-    , BiddersMap
-
     , BidParams(..)
     , CloseParams(..)
     , RegisterParams(..)
@@ -30,14 +28,14 @@ import qualified Prelude as P
 import           Schema (ToSchema)
 
 import           Anchor ( AnchorGraveyard, Anchor )
+import           Auction.Bidders ( Bidders )
 import qualified Auction.CertApprovals as CA
 import qualified Auction.CertRegistration as CR
-import           Auction.Synonyms ( BiddersMap )
 
 
 data Auction = Auction
     { aSeller   :: !PubKeyHash
-    , aBidders  :: !BiddersMap
+    , aBidders  :: !Bidders
     , aDeadline :: !POSIXTime
     , aMinBid   :: !Integer
     , aCurrency :: !CurrencySymbol

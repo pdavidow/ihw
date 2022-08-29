@@ -21,8 +21,7 @@ import           PlutusTx.Prelude ( Eq, Ord, ($), foldr )
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Auction.BidderStatusUtil ( isBidderRegistered, isBidderApproved )
-import           Auction.Synonyms ( BiddersMap )
+import           Auction.Bidders ( Bidders )
 import           Auction.TypesNonCertBidderStatus ( NotRegistereds(..), AlreadyApproveds(..) )
 
 
@@ -34,11 +33,11 @@ newtype CertApprovals = CertApprovals [PubKeyHash]
 PlutusTx.makeLift ''CertApprovals
 
 
-certifyApprovees :: BiddersMap -> [PubKeyHash] -> (CertApprovals, AlreadyApproveds, NotRegistereds)
-certifyApprovees m = foldr f (CertApprovals [], AlreadyApproveds [], NotRegistereds [])
+certifyApprovees :: Bidders -> [PubKeyHash] -> (CertApprovals, AlreadyApproveds, NotRegistereds)
+certifyApprovees b = foldr f (CertApprovals [], AlreadyApproveds [], NotRegistereds [])
     where f = \ x (CertApprovals as, AlreadyApproveds bs, NotRegistereds cs) ->
-            if isBidderRegistered m x then    (CertApprovals $ x:as, AlreadyApproveds bs    , NotRegistereds cs    )
-            else if isBidderApproved m x then (CertApprovals as    , AlreadyApproveds $ x:bs, NotRegistereds cs    )
+            if isBidderRegistered b x then    (CertApprovals $ x:as, AlreadyApproveds bs    , NotRegistereds cs    )
+            else if isBidderApproved b x then (CertApprovals as    , AlreadyApproveds $ x:bs, NotRegistereds cs    )
             else                              (CertApprovals as    , AlreadyApproveds bs    , NotRegistereds $ x:cs)
 
 

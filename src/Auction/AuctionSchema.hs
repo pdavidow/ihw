@@ -6,9 +6,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Auction.Offchain
+module Auction.AuctionSchema
     ( AuctionSchema
-    , endpoints
     )
     where
   

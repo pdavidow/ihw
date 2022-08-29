@@ -26,8 +26,7 @@ import           PlutusTx.Prelude ( otherwise, Either(..), Eq, Ord, ($) )
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Auction.BidderStatusUtil ( isBidderRegistered, isBidderApproved )
-import           Auction.Synonyms ( BiddersMap )
+import           Auction.Bidders ( Bidders )
 
 
 newtype CertRegistration = CertRegistration PubKeyHash 
@@ -38,10 +37,10 @@ newtype CertRegistration = CertRegistration PubKeyHash
 PlutusTx.makeLift ''CertRegistration
 
 
-certifyRegisteree :: BiddersMap -> PubKeyHash -> Either T.Text CertRegistration
-certifyRegisteree m x
-  | isBidderRegistered m x = Left "already registered"
-  | isBidderApproved m x = Left "already approved"
+certifyRegisteree :: Bidders -> PubKeyHash -> Either T.Text CertRegistration
+certifyRegisteree b x
+  | isBidderRegistered b x = Left "already registered"
+  | isBidderApproved b x = Left "already approved"
   | otherwise = Right $ CertRegistration x
 
 

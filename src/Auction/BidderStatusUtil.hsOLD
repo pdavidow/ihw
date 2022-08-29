@@ -12,14 +12,14 @@ import qualified PlutusTx.AssocMap as AssocMap
 import           PlutusTx.Prelude ( Bool, Eq((==)), Maybe(..) ) 
 
 import           Auction.Status ( Status(Approved, Registered) )
-import           Auction.Synonyms ( BiddersMap )
+import           Auction.Bidders ( Bidders, mapFrom )
 
 
 {-# INLINABLE isBidderRegistered #-}
-isBidderRegistered :: BiddersMap -> PubKeyHash -> Bool 
-isBidderRegistered m x = Just Registered == AssocMap.lookup x m
+isBidderRegistered :: Bidders -> PubKeyHash -> Bool 
+isBidderRegistered b pkh = Just Registered == AssocMap.lookup pkh (mapFrom b)
 
 
 {-# INLINABLE isBidderApproved #-}
-isBidderApproved :: BiddersMap -> PubKeyHash -> Bool 
-isBidderApproved m x = Just Approved == AssocMap.lookup x m
+isBidderApproved :: Bidders -> PubKeyHash -> Bool 
+isBidderApproved b pkh = Just Approved == AssocMap.lookup pkh (mapFrom b)
