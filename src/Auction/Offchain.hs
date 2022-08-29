@@ -84,7 +84,7 @@ start StartParams{..} = do
  
     let a = Auction
             { aSeller   = pkh
-            , aBidders  = AssocMap.empty
+            , aBidders  = emptyBidders
             , aDeadline = spDeadline
             , aMinBid   = spMinBid
             , aCurrency = spCurrency
