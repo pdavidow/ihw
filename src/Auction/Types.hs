@@ -10,8 +10,6 @@ module Auction.Types
     , AuctionAction(..)
     , AuctionDatum(..)
     , Bid(..)
-    , BiddersMap
-
     , BidParams(..)
     , CloseParams(..)
     , RegisterParams(..)
