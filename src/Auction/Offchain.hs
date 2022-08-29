@@ -54,7 +54,7 @@ import           Anchor ( anchorAsset, anchorTokenName, anchorValue, AnchorGrave
 import           Auction.Bidders ( NotRegistereds(..), AlreadyApproveds(..), pkhsForApprovals, emptyBidders, isBidderApproved, registerBidder, approveBidders, validateRegisteree, validateApprovees )
 import           Auction.Onchain ( auctionAddress, auctionValidator, typedAuctionValidator, typedValidator )                   
 import           Auction.Share ( auctionDatum, minBid, minLovelace, auctionedTokenValue )
-import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), CloseParams(..), BidParams(..), ApproveParams(..), RegisterParams(..), StartParams(..) )
+import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), CloseParams(..), BidParams(..), ApproveParams(..), RegisterParams(..), Seller(..), StartParams(..) )
 
 
 type AuctionSchema =
@@ -81,7 +81,7 @@ start StartParams{..} = do
     anchor <- mintAnchor           
  
     let a = Auction
-            { aSeller   = pkh
+            { aSeller   = Seller pkh
             , aBidders  = emptyBidders
             , aDeadline = spDeadline
             , aMinBid   = spMinBid
@@ -115,7 +115,7 @@ register RegisterParams{..} = do
     logInfo @String $ printf "found auction utxo with datum %s" $ show d        
 
     pkh <- ownPubKeyHash
-    when (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "seller may not register" 
+    when (pkh == unSeller (aSeller adAuction)) $ throwError $ T.pack $ printf "seller may not register" 
 
     reg <- case validateRegisteree (aBidders adAuction) pkh of
         Left e -> throwError e
@@ -149,7 +149,7 @@ approve ApproveParams{..} = do
     logInfo @String $ printf "found auction utxo with datum %s" $ show d        
 
     pkh <- ownPubKeyHash
-    unless (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "only seller may approve" 
+    unless (pkh == unSeller (aSeller adAuction)) $ throwError $ T.pack $ printf "only seller may approve" 
 
     let (app, AlreadyApproveds alreadyAs, NotRegistereds notRs) = validateApprovees (aBidders adAuction) apApprovals
     let pkhsA = pkhsForApprovals app
@@ -240,12 +240,12 @@ close CloseParams{..} = do
                   Constraints.unspentOutputs (Map.singleton oref o)
 
         tx      = case adHighestBid of
-                    Nothing      -> Constraints.mustPayToPubKey seller (t <> Ada.lovelaceValueOf minLovelace)  <>
+                    Nothing      -> Constraints.mustPayToPubKey (unSeller seller) (t <> Ada.lovelaceValueOf minLovelace)  <>
                                     Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
                                     Constraints.mustSpendScriptOutput oref r
 
                     Just Bid{..} -> Constraints.mustPayToPubKey bBidder (t <> Ada.lovelaceValueOf minLovelace) <>
-                                    Constraints.mustPayToPubKey seller (Ada.lovelaceValueOf bBid)              <>
+                                    Constraints.mustPayToPubKey (unSeller seller) (Ada.lovelaceValueOf bBid)              <>
                                     Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
                                     Constraints.mustSpendScriptOutput oref r
 

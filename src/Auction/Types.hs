@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -13,6 +15,7 @@ module Auction.Types
     , BidParams(..)
     , CloseParams(..)
     , RegisterParams(..)
+    , Seller(..)
     , StartParams(..)
     ) 
     where
@@ -28,11 +31,19 @@ import qualified Prelude as P
 import           Schema (ToSchema)
 
 import           Anchor ( AnchorGraveyard, Anchor )
-import           Auction.Bidders
+import           Auction.Bidders ( Bidders, Approvals, Registration )
+
+
+newtype Seller = Seller {unSeller :: PubKeyHash}
+    deriving stock (P.Eq, P.Show, Generic)
+    deriving anyclass (ToJSON, FromJSON, ToSchema)
+    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+
+PlutusTx.makeLift ''Seller
 
 
 data Auction = Auction
-    { aSeller   :: !PubKeyHash
+    { aSeller   :: !Seller
     , aBidders  :: !Bidders
     , aDeadline :: !POSIXTime
     , aMinBid   :: !Integer

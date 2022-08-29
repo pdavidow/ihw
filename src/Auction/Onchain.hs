@@ -56,7 +56,7 @@ import           PlutusTx.Prelude
 import           Anchor ( anchorValue ) 
 import           Auction.Bidders ( Approvals, Registration, pkhForRegistration, pkhsForApprovals, isBidderApproved, isAllRegisterd, isAtLeastRegistered, registerBidder, approveBidders )
 import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
-import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..) )
+import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), Seller(..) )
 
 
 data Auctioning
@@ -123,10 +123,10 @@ mkAuctionValidator ad redeemer ctx =
             traceIfFalse "too early" correctCloseSlotRange &&
             case adHighestBid ad of
                 Nothing      ->
-                    traceIfFalse "expected seller to get token" (getsValue (aSeller auction) $ tokenValue <> Ada.lovelaceValueOf minLovelace)
+                    traceIfFalse "expected seller to get token" (getsValue (unSeller $ aSeller auction) $ tokenValue <> Ada.lovelaceValueOf minLovelace)
                 Just Bid{..} ->
                     traceIfFalse "expected highest bidder to get token" (getsValue bBidder $ tokenValue <> Ada.lovelaceValueOf minLovelace) &&
-                    traceIfFalse "expected seller to get highest bid" (getsValue (aSeller auction) $ Ada.lovelaceValueOf bBid)
+                    traceIfFalse "expected seller to get highest bid" (getsValue (unSeller $ aSeller auction) $ Ada.lovelaceValueOf bBid)
 
   where
     info :: TxInfo
@@ -161,7 +161,7 @@ mkAuctionValidator ad redeemer ctx =
                 Just Bid{..} -> Ada.lovelaceValueOf $ minLovelace + bBid
 
     isSeller :: PubKeyHash -> Bool
-    isSeller pkh = aSeller auction == pkh      
+    isSeller pkh = unSeller (aSeller auction) == pkh      
 
     sufficientBid :: Integer -> Bool
     sufficientBid amount = amount >= minBid ad
