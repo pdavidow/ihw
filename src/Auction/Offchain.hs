@@ -51,7 +51,7 @@ import           Ledger.Value ( assetClassValueOf )
 import qualified Plutus.Contracts.Currency as Currency
 
 import           Anchor ( anchorAsset, anchorTokenName, anchorValue, AnchorGraveyard(..), Anchor(Anchor) )
-import           Auction.Bidders ( NotRegistereds(..), AlreadyApproveds(..), pkhsForApprovals, emptyBidders, isBidderApproved, registerBidder, approveBidders, validateRegisteree, validateApprovees )
+import           Auction.Bidders ( NotRegistereds(..), AlreadyApproveds(..), pkhsForApprovals, mkBidders, isBidderApproved, registerBidder, approveBidders, validateRegisteree, validateApprovees )
 import           Auction.Onchain ( auctionAddress, auctionValidator, typedAuctionValidator, typedValidator )                   
 import           Auction.Share ( auctionDatum, minBid, minLovelace, auctionedTokenValue )
 import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), CloseParams(..), BidParams(..), ApproveParams(..), RegisterParams(..), Seller(..), StartParams(..) )
@@ -82,7 +82,7 @@ start StartParams{..} = do
  
     let a = Auction
             { aSeller   = Seller pkh
-            , aBidders  = emptyBidders
+            , aBidders  = mkBidders
             , aDeadline = spDeadline
             , aMinBid   = spMinBid
             , aCurrency = spCurrency

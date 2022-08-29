@@ -14,7 +14,7 @@ module Auction.Bidders
     , NotRegistereds(..)    
     , Registration -- hide constructor
     , approveBidders  
-    , emptyBidders   
+    , mkBidders   
     , isBidderApproved
     , isAllRegisterd
     , isAtLeastRegistered
@@ -83,6 +83,10 @@ newtype NotRegistereds = NotRegistereds [PubKeyHash]
     deriving P.Show
 
 
+mkBidders :: Bidders
+mkBidders = Bidders AssocMap.empty
+
+
 mapFrom :: Bidders -> BiddersMap
 mapFrom (Bidders x) = x
 
@@ -95,10 +99,6 @@ pkhForRegistration (Registration x) = x
 {-# INLINABLE pkhsForApprovals #-}
 pkhsForApprovals :: Approvals -> [PubKeyHash]
 pkhsForApprovals (Approvals xs) = xs
-
-
-emptyBidders :: Bidders
-emptyBidders = Bidders AssocMap.empty
 
 
 {-# INLINABLE isBidderRegistered #-}
