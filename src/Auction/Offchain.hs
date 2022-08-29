@@ -119,13 +119,13 @@ register RegisterParams{..} = do
     pkh <- ownPubKeyHash
     when (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "seller may not register" 
 
-    cr <- case validateRegisteree (aBidders adAuction) pkh of
+    reg <- case validateRegisteree (aBidders adAuction) pkh of
         Left e -> throwError e
         Right x -> pure x
 
-    let d' = d {adAuction = adAuction {aBidders = registerBidder (aBidders adAuction) cr}}
+    let d' = d {adAuction = adAuction {aBidders = registerBidder (aBidders adAuction) reg}}
         v  = anchorValue rpAnchor <> auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid adHighestBid)
-        r  = Redeemer $ PlutusTx.toBuiltinData $ Register cr
+        r  = Redeemer $ PlutusTx.toBuiltinData $ Register reg
 
         lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
                   Constraints.otherScript auctionValidator                <>
@@ -153,15 +153,15 @@ approve ApproveParams{..} = do
     pkh <- ownPubKeyHash
     unless (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "only seller may approve" 
 
-    let (ca, AlreadyApproveds alreadyAs, NotRegistereds notRs) = validateApprovees (aBidders adAuction) apApprovals
-    let caPkhs = pkhsForApprovals ca
-    when (null caPkhs) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
+    let (app, AlreadyApproveds alreadyAs, NotRegistereds notRs) = validateApprovees (aBidders adAuction) apApprovals
+    let pkhsA = pkhsForApprovals app
+    when (null pkhsA) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
     unless (null notRs) $ logInfo @String $ printf "not registered %s" $ show notRs
     unless (null alreadyAs) $ logInfo @String $ printf "already approved %s" $ show alreadyAs
 
-    let d' = d {adAuction = adAuction {aBidders = approveBidders (aBidders adAuction) ca}}
+    let d' = d {adAuction = adAuction {aBidders = approveBidders (aBidders adAuction) app}}
         v  = anchorValue apAnchor <> auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid adHighestBid)
-        r  = Redeemer $ PlutusTx.toBuiltinData $ Approve pkh ca
+        r  = Redeemer $ PlutusTx.toBuiltinData $ Approve pkh app
 
         lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
                   Constraints.otherScript auctionValidator                <>
@@ -173,7 +173,7 @@ approve ApproveParams{..} = do
     ledgerTx <- submitTxConstraintsWith lookups tx
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
 
-    logInfo @String $ printf "approved bidders %s" $ show caPkhs
+    logInfo @String $ printf "approved bidders %s" $ show pkhsA
 
   
 bid :: BidParams -> Contract w AuctionSchema T.Text ()
