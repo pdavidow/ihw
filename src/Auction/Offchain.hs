@@ -153,7 +153,8 @@ approve ApproveParams{..} = do
 
     let (app, AlreadyApproveds alreadyAs, NotRegistereds notRs) = validateApprovees (aBidders adAuction) apApprovals
     let pkhsA = pkhsForApprovals app
-    when (null pkhsA) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
+    -- when (null pkhsA && length alreadyAs < length apApprovals) $ throwError $ T.pack $ printf "none fit for approval (that haven't already been approved) %s" $ show apApprovals
+    when (null pkhsA) $ throwError $ T.pack $ printf "none fit for approval (that haven't already been approved) %s" $ show apApprovals
     unless (null notRs) $ logInfo @String $ printf "not registered %s" $ show notRs
     unless (null alreadyAs) $ logInfo @String $ printf "already approved %s" $ show alreadyAs
 
@@ -214,14 +215,6 @@ bid BidParams{..} = do
 
 close :: CloseParams -> Contract w AuctionSchema T.Text ()
 close CloseParams{..} = do       
-    logInfo @String $ printf "=========================" 
-    logInfo @String $ printf "=========================" 
-    logInfo @String $ printf "=========================" 
-    logInfo @String $ printf "=========================" 
-    logInfo @String $ printf "=========================" 
-    logInfo @String $ printf "=========================" 
-    logInfo @String $ printf "=========================" 
-    logInfo @String $ printf "STARTED CLOSE"  
     mbX <- findViaAnchor cpAnchor
     (oref, o, d@AuctionDatum{..}) <- case mbX of
         Nothing -> do
