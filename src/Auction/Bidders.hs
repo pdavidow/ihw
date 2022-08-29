@@ -35,7 +35,7 @@ import           Ledger ( PubKeyHash )
 import qualified PlutusTx
 import           PlutusTx.Prelude
                     ( otherwise,
-                    Bool,
+                    Bool(..),
                     Maybe(Just),
                     Either(..),
                     ($),
@@ -46,10 +46,24 @@ import           PlutusTx.Prelude
 import qualified PlutusTx.AssocMap as AssocMap
 import qualified Prelude as P   
 import           Schema (ToSchema)
-import           Auction.Status ( Status(..) )
+
+
+data Status = Registered | Approved
+    deriving stock (P.Eq, P.Show, Generic)
+    deriving anyclass (ToJSON, FromJSON, ToSchema)
+
+instance Eq Status where
+    {-# INLINABLE (==) #-}
+    Registered == Registered = True
+    Approved == Approved = True
+    _ == _ = False
+
+PlutusTx.makeIsDataIndexed ''Status [('Registered, 0), ('Approved, 1)]
+PlutusTx.makeLift ''Status  
 
 
 type BiddersMap = AssocMap.Map PubKeyHash Status
+
 
 newtype Bidders = Bidders BiddersMap
     deriving stock (P.Eq, P.Show, Generic)
