@@ -109,8 +109,10 @@ data StartParams = StartParams
  
 newtype RegisterParams = RegisterParams 
     { rpAnchor :: Anchor
-    } deriving (Generic, ToJSON, FromJSON, ToSchema)
-
+    } 
+    deriving (Generic)
+    deriving newtype (ToJSON, FromJSON, ToSchema)
+ 
 
 data ApproveParams = ApproveParams
     { apApprovals :: ![PubKeyHash] -- todo: use Non Empty List

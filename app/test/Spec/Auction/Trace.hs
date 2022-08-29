@@ -26,7 +26,7 @@ import qualified PlutusTx.Prelude                   as PlutusTx
 
 import           Anchor ( AnchorGraveyard(..), Anchor )
 import           Auction.Offchain ( endpoints, AuctionSchema ) 
-import           Auction.Types ( CloseParams(..), BidParams(..), ApproveParams(..), RegisterParams(..), StartParams(..) )
+import           Auction.Types ( CloseParams(..), BidParams(..), ApproveParams(..), StartParams(..) )
 
 
 walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF, walletGraveyard :: Wallet 
