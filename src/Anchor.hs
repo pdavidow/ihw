@@ -37,7 +37,7 @@ import           Ledger.Value
                     TokenName(TokenName),
                     assetClassValue,
                     assetClassValueOf )
-import           PlutusTx.Prelude ( Bool, Eq(..), ($), not, traceIfFalse ) 
+import           PlutusTx.Prelude ( Bool, Eq(..), ($), not ) 
 import qualified PlutusTx
 import           Schema (ToSchema)
 

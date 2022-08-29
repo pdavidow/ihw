@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -13,6 +15,7 @@ module Auction.Types
     , BidParams(..)
     , CloseParams(..)
     , RegisterParams(..)
+    , Seller(..)
     , StartParams(..)
     ) 
     where
@@ -28,14 +31,20 @@ import qualified Prelude as P
 import           Schema (ToSchema)
 
 import           Anchor ( AnchorGraveyard, Anchor )
-import qualified Auction.CertApprovals as CA
-import qualified Auction.CertRegistration as CR
-import           Auction.Synonyms ( BiddersMap )
+import           Auction.Bidders ( Bidders, Approvals, Registration )
+
+
+newtype Seller = Seller {unSeller :: PubKeyHash}
+    deriving stock (P.Eq, P.Show, Generic)
+    deriving anyclass (ToJSON, FromJSON, ToSchema)
+    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+
+PlutusTx.makeLift ''Seller
 
 
 data Auction = Auction
-    { aSeller   :: !PubKeyHash
-    , aBidders  :: !BiddersMap
+    { aSeller   :: !Seller
+    , aBidders  :: !Bidders
     , aDeadline :: !POSIXTime
     , aMinBid   :: !Integer
     , aCurrency :: !CurrencySymbol
@@ -70,8 +79,8 @@ PlutusTx.makeLift ''Bid
 
 
 data AuctionAction 
-    = Register !CR.CertRegistration
-    | Approve {aaSeller :: !PubKeyHash, aaCerts :: !CA.CertApprovals}
+    = Register !Registration
+    | Approve PubKeyHash Approvals
     | MkBid !Bid 
     | Close 
     deriving P.Show

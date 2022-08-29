@@ -34,7 +34,6 @@ import           Ledger
                     TxOut(txOutDatumHash, txOutValue, txOutAddress),
                     Value )
 import           Ledger.Ada as Ada ( lovelaceValueOf )
-import qualified PlutusTx.AssocMap as AssocMap
 import qualified Ledger.Typed.Scripts as Scripts  
 import qualified PlutusTx
 import           PlutusTx.Prelude
@@ -45,7 +44,6 @@ import           PlutusTx.Prelude
                     (.),
                     (&&),
                     not,
-                    all,
                     null,
                     maybe,
                     traceError,
@@ -56,12 +54,9 @@ import           PlutusTx.Prelude
                     Semigroup((<>)) )
 
 import           Anchor ( anchorValue ) 
-import           Auction.BidderStatus ( approveBidders, registerBidder )
-import           Auction.BidderStatusUtil ( isBidderRegistered, isBidderApproved )
-import qualified Auction.CertApprovals as CA
-import qualified Auction.CertRegistration as CR
+import           Auction.Bidders ( Approvals, Registration, pkhForRegistration, pkhsForApprovals, isBidderApproved, isAllRegisterd, isAtLeastRegistered, registerBidder, approveBidders )
 import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
-import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..) )
+import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), Seller(..) )
 
 
 data Auctioning
@@ -101,20 +96,20 @@ mkAuctionValidator ad redeemer ctx =
     traceIfFalse "wrong input value" correctInputValue &&
 
     case redeemer of
-        Register cr ->
-            traceIfFalse "registeree is seller" (not $ isSeller crPkh) &&
-            traceIfFalse "registeree already registered or approved" (not $ isRegistereeAtLeastRegistered crPkh) &&
-            traceIfFalse "wrong register output datum" (correctRegisterOutputDatum cr) &&
+        Register reg ->
+            traceIfFalse "registeree is seller" (not $ isSeller pkhR) &&
+            traceIfFalse "registeree already registered or approved" (not $ isAtLeastRegistered (aBidders auction) pkhR) &&
+            traceIfFalse "wrong register output datum" (correctRegisterOutputDatum reg) &&
             traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
-            where crPkh = CR.pkhFor cr
+            where pkhR = pkhForRegistration reg
 
-        Approve sellerPkh ca ->
+        Approve sellerPkh app ->
             traceIfFalse "approver is not seller" (isSeller sellerPkh) &&
-            traceIfFalse "empty list" (not $ null caPkhs) &&
-            traceIfFalse "not all are registered" (isAllRegisterd caPkhs) &&
-            traceIfFalse "wrong approve output datum" (correctApproveOutputDatum ca) &&            
+            traceIfFalse "empty list" (not $ null pkhsA) &&
+            traceIfFalse "not all are registered" (isAllRegisterd (aBidders auction) pkhsA) &&
+            traceIfFalse "wrong approve output datum" (correctApproveOutputDatum app) &&            
             traceIfFalse "wrong approve output value" correctBidderStatusOutputValue              
-            where caPkhs = CA.pkhsFor ca
+            where pkhsA = pkhsForApprovals app
 
         MkBid b@Bid{..} ->
             traceIfFalse "bidder not approved" (isBidderApproved (aBidders auction) bBidder) &&
@@ -128,10 +123,10 @@ mkAuctionValidator ad redeemer ctx =
             traceIfFalse "too early" correctCloseSlotRange &&
             case adHighestBid ad of
                 Nothing      ->
-                    traceIfFalse "expected seller to get token" (getsValue (aSeller auction) $ tokenValue <> Ada.lovelaceValueOf minLovelace)
+                    traceIfFalse "expected seller to get token" (getsValue (unSeller $ aSeller auction) $ tokenValue <> Ada.lovelaceValueOf minLovelace)
                 Just Bid{..} ->
                     traceIfFalse "expected highest bidder to get token" (getsValue bBidder $ tokenValue <> Ada.lovelaceValueOf minLovelace) &&
-                    traceIfFalse "expected seller to get highest bid" (getsValue (aSeller auction) $ Ada.lovelaceValueOf bBid)
+                    traceIfFalse "expected seller to get highest bid" (getsValue (unSeller $ aSeller auction) $ Ada.lovelaceValueOf bBid)
 
   where
     info :: TxInfo
@@ -166,13 +161,7 @@ mkAuctionValidator ad redeemer ctx =
                 Just Bid{..} -> Ada.lovelaceValueOf $ minLovelace + bBid
 
     isSeller :: PubKeyHash -> Bool
-    isSeller pkh = aSeller auction == pkh      
-
-    isRegistereeAtLeastRegistered :: PubKeyHash -> Bool      
-    isRegistereeAtLeastRegistered pkh = AssocMap.member pkh $ aBidders auction
-
-    isAllRegisterd :: [PubKeyHash] -> Bool 
-    isAllRegisterd = all $ isBidderRegistered $ aBidders auction
+    isSeller pkh = unSeller (aSeller auction) == pkh      
 
     sufficientBid :: Integer -> Bool
     sufficientBid amount = amount >= minBid ad
@@ -194,14 +183,14 @@ mkAuctionValidator ad redeemer ctx =
     correctBidderStatusOutputValue =
         txOutValue ownOutput == anchorValue (adAnchor ad) <> tokenValue <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid (adHighestBid ad))
 
-    correctRegisterOutputDatum :: CR.CertRegistration -> Bool
+    correctRegisterOutputDatum :: Registration -> Bool
     correctRegisterOutputDatum x = 
         (adAuction outputDatum == auction {aBidders = aBidders'}) &&
         (adHighestBid outputDatum == adHighestBid ad) &&
         (adAnchor outputDatum == adAnchor ad)
             where aBidders' = registerBidder (aBidders auction) x
 
-    correctApproveOutputDatum :: CA.CertApprovals -> Bool
+    correctApproveOutputDatum :: Approvals -> Bool
     correctApproveOutputDatum x = 
         (adAuction outputDatum == auction {aBidders = aBidders'}) &&
         (adHighestBid outputDatum == adHighestBid ad) &&

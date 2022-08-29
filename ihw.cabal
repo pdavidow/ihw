@@ -22,17 +22,12 @@ common project-config
 
 library
   exposed-modules:   Anchor
-                     , Auction.BidderStatus
-                     , Auction.BidderStatusUtil
-                     , Auction.CertApprovals 
-                     , Auction.CertRegistration
+                     , Auction.Bidders 
                      , Auction.Offchain
                      , Auction.Onchain
                      , Auction.Share
-                     , Auction.Status
-                     , Auction.Synonyms                     
+                     , Auction.Status             
                      , Auction.Types
-                     , Auction.TypesNonCertBidderStatus
 
   build-depends:       aeson
                      , base ^>=4.14.1.0

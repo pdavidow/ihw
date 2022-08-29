@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
@@ -48,19 +47,14 @@ import           Plutus.Contract
                     Promise(awaitPromise),
                     Contract )
 import qualified PlutusTx
-import qualified PlutusTx.AssocMap as AssocMap
 import           Ledger.Value ( assetClassValueOf ) 
 import qualified Plutus.Contracts.Currency as Currency
 
 import           Anchor ( anchorAsset, anchorTokenName, anchorValue, AnchorGraveyard(..), Anchor(Anchor) )
-import           Auction.BidderStatus ( registerBidder, approveBidders ) 
-import           Auction.BidderStatusUtil ( isBidderApproved )
-import qualified Auction.CertApprovals as CA
-import qualified Auction.CertRegistration as CR
-import           Auction.TypesNonCertBidderStatus ( NotRegistereds(..), AlreadyApproveds(..) )
+import           Auction.Bidders ( NotRegistereds(..), AlreadyApproveds(..), pkhsForApprovals, emptyBidders, isBidderApproved, registerBidder, approveBidders, validateRegisteree, validateApprovees )
 import           Auction.Onchain ( auctionAddress, auctionValidator, typedAuctionValidator, typedValidator )                   
 import           Auction.Share ( auctionDatum, minBid, minLovelace, auctionedTokenValue )
-import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), CloseParams(..), BidParams(..), ApproveParams(..), RegisterParams(..), StartParams(..) )
+import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), CloseParams(..), BidParams(..), ApproveParams(..), RegisterParams(..), Seller(..), StartParams(..) )
 
 
 type AuctionSchema =
@@ -87,8 +81,8 @@ start StartParams{..} = do
     anchor <- mintAnchor           
  
     let a = Auction
-            { aSeller   = pkh
-            , aBidders  = AssocMap.empty
+            { aSeller   = Seller pkh
+            , aBidders  = emptyBidders
             , aDeadline = spDeadline
             , aMinBid   = spMinBid
             , aCurrency = spCurrency
@@ -121,15 +115,15 @@ register RegisterParams{..} = do
     logInfo @String $ printf "found auction utxo with datum %s" $ show d        
 
     pkh <- ownPubKeyHash
-    when (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "seller may not register" 
+    when (pkh == unSeller (aSeller adAuction)) $ throwError $ T.pack $ printf "seller may not register" 
 
-    cr <- case CR.certifyRegisteree (aBidders adAuction) pkh of
+    reg <- case validateRegisteree (aBidders adAuction) pkh of
         Left e -> throwError e
         Right x -> pure x
 
-    let d' = d {adAuction = adAuction {aBidders = registerBidder (aBidders adAuction) cr}}
+    let d' = d {adAuction = adAuction {aBidders = registerBidder (aBidders adAuction) reg}}
         v  = anchorValue rpAnchor <> auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid adHighestBid)
-        r  = Redeemer $ PlutusTx.toBuiltinData $ Register cr
+        r  = Redeemer $ PlutusTx.toBuiltinData $ Register reg
 
         lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
                   Constraints.otherScript auctionValidator                <>
@@ -155,17 +149,17 @@ approve ApproveParams{..} = do
     logInfo @String $ printf "found auction utxo with datum %s" $ show d        
 
     pkh <- ownPubKeyHash
-    unless (pkh == aSeller adAuction) $ throwError $ T.pack $ printf "only seller may approve" 
+    unless (pkh == unSeller (aSeller adAuction)) $ throwError $ T.pack $ printf "only seller may approve" 
 
-    let (ca, AlreadyApproveds alreadyAs, NotRegistereds notRs) = CA.certifyApprovees (aBidders adAuction) apApprovals
-    let caPkhs = CA.pkhsFor ca
-    when (null caPkhs) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
+    let (app, AlreadyApproveds alreadyAs, NotRegistereds notRs) = validateApprovees (aBidders adAuction) apApprovals
+    let pkhsA = pkhsForApprovals app
+    when (null pkhsA) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
     unless (null notRs) $ logInfo @String $ printf "not registered %s" $ show notRs
     unless (null alreadyAs) $ logInfo @String $ printf "already approved %s" $ show alreadyAs
 
-    let d' = d {adAuction = adAuction {aBidders = approveBidders (aBidders adAuction) ca}}
+    let d' = d {adAuction = adAuction {aBidders = approveBidders (aBidders adAuction) app}}
         v  = anchorValue apAnchor <> auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid adHighestBid)
-        r  = Redeemer $ PlutusTx.toBuiltinData $ Approve pkh ca
+        r  = Redeemer $ PlutusTx.toBuiltinData $ Approve pkh app
 
         lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
                   Constraints.otherScript auctionValidator                <>
@@ -177,7 +171,7 @@ approve ApproveParams{..} = do
     ledgerTx <- submitTxConstraintsWith lookups tx
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
 
-    logInfo @String $ printf "approved bidders %s" $ show caPkhs
+    logInfo @String $ printf "approved bidders %s" $ show pkhsA
 
   
 bid :: BidParams -> Contract w AuctionSchema T.Text ()
@@ -246,12 +240,12 @@ close CloseParams{..} = do
                   Constraints.unspentOutputs (Map.singleton oref o)
 
         tx      = case adHighestBid of
-                    Nothing      -> Constraints.mustPayToPubKey seller (t <> Ada.lovelaceValueOf minLovelace)  <>
+                    Nothing      -> Constraints.mustPayToPubKey (unSeller seller) (t <> Ada.lovelaceValueOf minLovelace)  <>
                                     Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
                                     Constraints.mustSpendScriptOutput oref r
 
                     Just Bid{..} -> Constraints.mustPayToPubKey bBidder (t <> Ada.lovelaceValueOf minLovelace) <>
-                                    Constraints.mustPayToPubKey seller (Ada.lovelaceValueOf bBid)              <>
+                                    Constraints.mustPayToPubKey (unSeller seller) (Ada.lovelaceValueOf bBid)              <>
                                     Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
                                     Constraints.mustSpendScriptOutput oref r
 
