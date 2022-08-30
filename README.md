@@ -6,16 +6,12 @@ Add two endpoints to the _EnglishAuction.hs_ file: `register` & `approve`. Walle
 on the auction without having registered and been approved by the seller.
 Your submission should run in the Plutus playground.
 
-
 ## CURRENT ASSIGNMENT
-Create repo with similar functionality.  Use unit tests, not playground.
-
+Branch off `week01-anchorPlusToken` to implement similar functionality.  Use unit tests, not playground.
 
 ## NOTES
-0) Using plutus-apps tag `plutus-starter-devcontainer/v1.0.14`
-1) See branch `week01-anchorPlusToken` for starting point.
+1) Using plutus-apps tag `plutus-starter-devcontainer/v1.0.14`
 2) Introduced `Anchor` such that auctioned NFT only serves one purpose. 
-
 
 ## USAGE
 `cabal run spectests`
