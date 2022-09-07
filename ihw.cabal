@@ -21,8 +21,7 @@ common project-config
                         -Wunused-packages
 
 library
-  exposed-modules:   Anchor
-                     , Auction.Bidders 
+  exposed-modules:   Auction.Bidders 
                      , Auction.Offchain
                      , Auction.Onchain
                      , Auction.Share         

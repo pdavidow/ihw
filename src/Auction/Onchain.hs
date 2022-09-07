@@ -35,6 +35,7 @@ import           Ledger
                     Value )
 import           Ledger.Ada as Ada ( lovelaceValueOf )
 import qualified Ledger.Typed.Scripts as Scripts  
+import           Plutus.Contract.StateMachine
 import qualified PlutusTx
 import           PlutusTx.Prelude
                     ( Bool(..),
@@ -53,7 +54,6 @@ import           PlutusTx.Prelude
                     Ord((>=)),
                     Semigroup((<>)) )
 
-import           Anchor ( anchorValue ) 
 import           Auction.Bidders ( Approvals, Registration, pkhForRegistration, pkhsForApprovals, isBidderApproved, isAllRegisterd, isAtLeastRegistered, registerBidder, approveBidders )
 import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
 import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), Seller(..) )
@@ -155,7 +155,7 @@ mkAuctionValidator ad redeemer ctx =
 
     correctInputValue :: Bool
     correctInputValue = inVal == 
-        anchorValue (adAnchor ad) <> tokenValue <> 
+       tokenValue <> 
             case adHighestBid ad of
                 Nothing      -> Ada.lovelaceValueOf minLovelace
                 Just Bid{..} -> Ada.lovelaceValueOf $ minLovelace + bBid
@@ -181,7 +181,7 @@ mkAuctionValidator ad redeemer ctx =
 
     correctBidderStatusOutputValue  :: Bool
     correctBidderStatusOutputValue =
-        txOutValue ownOutput == anchorValue (adAnchor ad) <> tokenValue <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid (adHighestBid ad))
+        txOutValue ownOutput == tokenValue <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid (adHighestBid ad))
 
     correctRegisterOutputDatum :: Registration -> Bool
     correctRegisterOutputDatum x = 
@@ -193,19 +193,17 @@ mkAuctionValidator ad redeemer ctx =
     correctApproveOutputDatum :: Approvals -> Bool
     correctApproveOutputDatum x = 
         (adAuction outputDatum == auction {aBidders = aBidders'}) &&
-        (adHighestBid outputDatum == adHighestBid ad) &&
-        (adAnchor outputDatum == adAnchor ad)
+        (adHighestBid outputDatum == adHighestBid ad) 
             where aBidders' = approveBidders (aBidders auction) x
 
     correctBidOutputDatum :: Bid -> Bool
     correctBidOutputDatum b = 
         (adAuction outputDatum == auction) &&
-        (adHighestBid outputDatum == Just b) &&
-        (adAnchor outputDatum == adAnchor ad)
+        (adHighestBid outputDatum == Just b) 
 
     correctBidOutputValue :: Integer -> Bool
     correctBidOutputValue amount =
-        txOutValue ownOutput == anchorValue (adAnchor ad) <> tokenValue <> Ada.lovelaceValueOf (minLovelace + amount)
+        txOutValue ownOutput == tokenValue <> Ada.lovelaceValueOf (minLovelace + amount)
 
     correctBidRefund :: Bool
     correctBidRefund = case adHighestBid ad of
@@ -236,3 +234,16 @@ mkAuctionValidator ad redeemer ctx =
               ]
       in
         txOutAddress o == pubKeyHashAddress h 
+
+
+---------
+
+{-# INLINABLE isFinal #-}
+isFinal :: AuctionDatum -> Bool
+isFinal Finished = True
+isFinal _        = False
+
+
+{-# INLINABLE transition #-}
+transition :: Auction -> State AuctionDatum -> AuctionAction -> Maybe (TxConstraints Void Void, State AuctionDatum)
+transition = undefined

@@ -14,8 +14,6 @@ module Auction.Types
     , AuctionDatum(..)
     , Bid(..)
     , BidParams(..)
-    , CloseParams(..)
-    , RegisterParams(..)
     , Seller(..)
     , StartParams(..)
     ) 
@@ -31,7 +29,6 @@ import           PlutusTx.Prelude
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Anchor ( AnchorGraveyard, Anchor )
 import           Auction.Bidders ( Bidders, Approvals, Registration )
 
 
@@ -94,7 +91,6 @@ data AuctionDatum
     = AuctionDatum
         { adAuction    :: !Auction
         , adHighestBid :: !(Maybe Bid)
-        , adAnchor :: !Anchor
         } 
     | Finished
         deriving P.Show
@@ -104,9 +100,9 @@ PlutusTx.makeLift ''AuctionDatum
 
 instance Eq AuctionDatum where
     {-# INLINABLE (==) #-}
-    AuctionDatum x y z == AuctionDatum x' y' z' = (x == x') && (y == y') && (z == z')
-    Finished        == Finished          = True
-    _               == _                 = False
+    AuctionDatum x y == AuctionDatum x' y' = (x == x') && (y == y')
+    Finished         == Finished           = True
+    _                == _                  = False
 
 
 data StartParams = StartParams
@@ -115,28 +111,15 @@ data StartParams = StartParams
     , spCurrency :: !CurrencySymbol
     , spToken    :: !TokenName    
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
-
- 
-newtype RegisterParams = RegisterParams 
-    { rpAnchor :: Anchor
-    } 
-    deriving (Generic)
-    deriving newtype (ToJSON, FromJSON, ToSchema)
  
 
 data ApproveParams = ApproveParams
     { apApprovals :: ![PubKeyHash] -- todo: use Non Empty List
-    , apAnchor :: !Anchor
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 
 data BidParams = BidParams
     { bpBid    :: !Integer
-    , bpAnchor :: !Anchor
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 
-data CloseParams = CloseParams 
-    { cpAnchorGraveyard :: !AnchorGraveyard
-    , cpAnchor :: !Anchor
-    } deriving (Generic, ToJSON, FromJSON, ToSchema)
