@@ -54,7 +54,7 @@ import qualified Plutus.Contracts.Currency as Currency
 import           Auction.Bidders ( NotRegistereds(..), AlreadyApproveds(..), pkhsForApprovals, mkBidders, isBidderApproved, registerBidder, approveBidders, validateRegisteree, validateApprovees )
 import           Auction.Onchain ( auctionAddress, auctionValidator, typedAuctionValidator, typedValidator )                   
 import           Auction.Share ( auctionDatum, minBid, minLovelace, auctionedTokenValue )
-import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), BidParams(..), ApproveParams(..), Seller(..), StartParams(..) )
+import           Auction.Types ( Auction(..), Bid(..), AuctionRedeemer(..), AuctionDatum(..), BidParams(..), ApproveParams(..), Seller(..), StartParams(..) )
 
 
 type AuctionSchema =
@@ -65,8 +65,14 @@ type AuctionSchema =
     .\/ Endpoint "approve"  ApproveParams
 
 
-endpoints :: Contract (Last Anchor) AuctionSchema T.Text ()
-endpoints = awaitPromise (start' `select` bid' `select` close' `select` register' `select` approve') >> endpoints
+endpoints :: Contract (Last ThreadToken) AuctionSchema T.Text ()
+endpoints = awaitPromise 
+    ( start'    `select` 
+      bid'      `select` 
+      close'    `select` 
+      register' `select` 
+      approve'
+    ) >> endpoints
   where
     start'    = endpoint @"start"    start
     bid'      = endpoint @"bid"      bid
@@ -75,10 +81,11 @@ endpoints = awaitPromise (start' `select` bid' `select` close' `select` register
     approve'  = endpoint @"approve"  approve
 
 
-start :: StartParams -> Contract () AuctionSchema T.Text ()
+start :: StartParams -> Contract (Last ThreadToken) AuctionSchema T.Text ()
 start StartParams{..} = do         
     pkh <- ownPubKeyHash         
- 
+    threadToken  <- mapError' getThreadToken
+
     let a = Auction
             { aSeller   = Seller pkh
             , aBidders  = mkBidders
@@ -99,6 +106,8 @@ start StartParams{..} = do
 
     ledgerTx <- submitTxConstraints typedValidator tx       
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
+
+    tell $ Last $ Just threadToken
 
     logInfo @String $ printf "started auction %s for value-with-token %s" (show a) (show v)
    

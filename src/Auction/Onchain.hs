@@ -56,12 +56,12 @@ import           PlutusTx.Prelude
 
 import           Auction.Bidders ( Approvals, Registration, pkhForRegistration, pkhsForApprovals, isBidderApproved, isAllRegisterd, isAtLeastRegistered, registerBidder, approveBidders )
 import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
-import           Auction.Types ( Auction(..), Bid(..), AuctionAction(..), AuctionDatum(..), Seller(..) )
+import           Auction.Types ( Auction(..), Bid(..), AuctionRedeemer(..), AuctionDatum(..), Seller(..) )
 
 
 data Auctioning
 instance Scripts.ValidatorTypes Auctioning where
-    type instance RedeemerType Auctioning = AuctionAction
+    type instance RedeemerType Auctioning = AuctionRedeemer
     type instance DatumType Auctioning = AuctionDatum
 
 
@@ -70,7 +70,7 @@ typedAuctionValidator = Scripts.mkTypedValidator @Auctioning
     $$(PlutusTx.compile [|| mkAuctionValidator ||])
     $$(PlutusTx.compile [|| wrap ||])
   where
-    wrap = Scripts.wrapValidator @AuctionDatum @AuctionAction
+    wrap = Scripts.wrapValidator @AuctionDatum @AuctionRedeemer
 
 
 auctionValidator :: Validator
@@ -91,7 +91,7 @@ typedValidator = Scripts.unsafeMkTypedValidator auctionValidator
 
 
 {-# INLINABLE mkAuctionValidator #-}
-mkAuctionValidator :: AuctionDatum -> AuctionAction -> ScriptContext -> Bool
+mkAuctionValidator :: AuctionDatum -> AuctionRedeemer -> ScriptContext -> Bool
 mkAuctionValidator ad redeemer ctx = 
     traceIfFalse "wrong input value" correctInputValue &&
 
@@ -244,5 +244,7 @@ isFinal _        = False
 
 
 {-# INLINABLE transition #-}
-transition :: Auction -> State AuctionDatum -> AuctionAction -> Maybe (TxConstraints Void Void, State AuctionDatum)
-transition = 
+transition :: Auction -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
+transition auction s r = case (stateValue s, stateData s, r) of 
+
+        _                                        -> Nothing

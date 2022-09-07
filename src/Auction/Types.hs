@@ -10,7 +10,7 @@
 module Auction.Types
     ( ApproveParams(..)
     , Auction(..)
-    , AuctionAction(..)
+    , AuctionRedeemer(..)
     , AuctionDatum(..)
     , Bid(..)
     , BidParams(..)
@@ -76,15 +76,15 @@ PlutusTx.unstableMakeIsData ''Bid
 PlutusTx.makeLift ''Bid
 
 
-data AuctionAction 
+data AuctionRedeemer 
     = Register !Registration
     | Approve PubKeyHash Approvals
     | MkBid !Bid 
     | Close 
     deriving P.Show
 
-PlutusTx.unstableMakeIsData ''AuctionAction
-PlutusTx.makeLift ''AuctionAction
+PlutusTx.unstableMakeIsData ''AuctionRedeemer
+PlutusTx.makeLift ''AuctionRedeemer
 
 
 data AuctionDatum 
