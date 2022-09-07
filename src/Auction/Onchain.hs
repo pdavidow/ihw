@@ -11,7 +11,7 @@ module Auction.Onchain
     , auctionHash    
     , auctionValidator
     , typedAuctionValidator
-    , typedValidator
+    , Auction.Onchain.typedValidator
     )    
     where
 
@@ -186,8 +186,7 @@ mkAuctionValidator ad redeemer ctx =
     correctRegisterOutputDatum :: Registration -> Bool
     correctRegisterOutputDatum x = 
         (adAuction outputDatum == auction {aBidders = aBidders'}) &&
-        (adHighestBid outputDatum == adHighestBid ad) &&
-        (adAnchor outputDatum == adAnchor ad)
+        (adHighestBid outputDatum == adHighestBid ad) 
             where aBidders' = registerBidder (aBidders auction) x
 
     correctApproveOutputDatum :: Approvals -> Bool
@@ -246,4 +245,4 @@ isFinal _        = False
 
 {-# INLINABLE transition #-}
 transition :: Auction -> State AuctionDatum -> AuctionAction -> Maybe (TxConstraints Void Void, State AuctionDatum)
-transition = undefined
+transition = 
