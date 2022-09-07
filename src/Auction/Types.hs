@@ -5,6 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 
 module Auction.Types
     ( ApproveParams(..)
@@ -26,7 +27,7 @@ import           GHC.Generics (Generic)
 import           Ledger ( PubKeyHash, POSIXTime ) 
 import           Ledger.Value as Value ( TokenName, CurrencySymbol )
 import qualified PlutusTx
-import           PlutusTx.Prelude ( Integer, Maybe, Eq(..), (&&) ) 
+import           PlutusTx.Prelude 
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
@@ -89,14 +90,23 @@ PlutusTx.unstableMakeIsData ''AuctionAction
 PlutusTx.makeLift ''AuctionAction
 
 
-data AuctionDatum = AuctionDatum
-    { adAuction    :: !Auction
-    , adHighestBid :: !(Maybe Bid)
-    , adAnchor :: !Anchor
-    } deriving P.Show
+data AuctionDatum 
+    = AuctionDatum
+        { adAuction    :: !Auction
+        , adHighestBid :: !(Maybe Bid)
+        , adAnchor :: !Anchor
+        } 
+    | Finished
+        deriving P.Show
 
 PlutusTx.unstableMakeIsData ''AuctionDatum
 PlutusTx.makeLift ''AuctionDatum
+
+instance Eq AuctionDatum where
+    {-# INLINABLE (==) #-}
+    AuctionDatum x y z == AuctionDatum x' y' z' = (x == x') && (y == y') && (z == z')
+    Finished        == Finished          = True
+    _               == _                 = False
 
 
 data StartParams = StartParams
