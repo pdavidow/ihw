@@ -246,5 +246,8 @@ isFinal _        = False
 {-# INLINABLE transition #-}
 transition :: Auction -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
 transition auction s r = case (stateValue s, stateData s, r) of 
-
-        _                                        -> Nothing
+    (v, AuctionDatum auction _,            Register) ->
+    (v, AuctionDatum auction _,            Approve approverPkh, approvals) ->
+    (v, AuctionDatum auction mbHighestBid, MkBid bid) ->
+    (v, AuctionDatum auction mbHighestBid, Close) ->
+    _ -> Nothing
