@@ -24,6 +24,7 @@ import           GHC.Generics (Generic)
 
 import           Ledger ( PubKeyHash, POSIXTime ) 
 import           Ledger.Value as Value ( TokenName, CurrencySymbol )
+import           Plutus.Contract.StateMachine
 import qualified PlutusTx
 import           PlutusTx.Prelude 
 import qualified Prelude as P   
@@ -47,6 +48,7 @@ data Auction = Auction
     , aMinBid   :: !Integer
     , aCurrency :: !CurrencySymbol
     , aToken    :: !TokenName
+    , aThreader :: !ThreadToken
     } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
 
 instance Eq Auction where
