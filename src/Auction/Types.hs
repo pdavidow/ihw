@@ -40,30 +40,7 @@ newtype Seller = Seller {unSeller :: PubKeyHash}
 
 PlutusTx.makeLift ''Seller
 
-
-data Auction = Auction
-    { aSeller   :: !Seller
-    , aBidders  :: !Bidders
-    , aDeadline :: !POSIXTime
-    , aMinBid   :: !Integer
-    , aCurrency :: !CurrencySymbol
-    , aToken    :: !TokenName
-    , aThreader :: !ThreadToken
-    } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
-
-instance Eq Auction where
-    {-# INLINABLE (==) #-}
-    a == b = (aSeller   a == aSeller   b) &&
-             (aBidders  a == aBidders  b) &&    
-             (aDeadline a == aDeadline b) &&
-             (aMinBid   a == aMinBid   b) &&
-             (aCurrency a == aCurrency b) &&
-             (aToken    a == aToken    b)
-
-PlutusTx.unstableMakeIsData ''Auction
-PlutusTx.makeLift ''Auction
-
-
+---------------------
 data Bid = Bid
     { bBidder :: !PubKeyHash
     , bBid    :: !Integer
@@ -78,6 +55,67 @@ PlutusTx.unstableMakeIsData ''Bid
 PlutusTx.makeLift ''Bid
 
 
+-- data Auction = Auction
+--     { aSeller   :: !Seller
+--     , aBidders  :: !Bidders
+--     , aDeadline :: !POSIXTime
+--     , aMinBid   :: !Integer
+--     , aCurrency :: !CurrencySymbol
+--     , aToken    :: !TokenName
+--     , aThreader :: !ThreadToken
+--     } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
+
+-- instance Eq Auction where
+--     {-# INLINABLE (==) #-}
+--     a == b = (aSeller   a == aSeller   b) &&
+--              (aBidders  a == aBidders  b) &&    
+--              (aDeadline a == aDeadline b) &&
+--              (aMinBid   a == aMinBid   b) &&
+--              (aCurrency a == aCurrency b) &&
+--              (aToken    a == aToken    b)
+
+-- PlutusTx.unstableMakeIsData ''Auction
+-- PlutusTx.makeLift ''Auction
+
+---------------------
+data AuctionParams = AuctionParams
+    { apSeller   :: !Seller
+    , apDeadline :: !POSIXTime
+    , apMinBid   :: !Integer
+    , apCurrency :: !CurrencySymbol -- todo AssetClass
+    , apToken    :: !TokenName      -- "      "
+    } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
+
+instance Eq AuctionParams where
+    {-# INLINABLE (==) #-}
+    a == b = (apSeller   a == apSeller   b) &&
+             (apDeadline a == apDeadline b) &&
+             (apMinBid   a == apMinBid   b) &&
+             (apCurrency a == apCurrency b) 
+
+PlutusTx.unstableMakeIsData ''AuctionParams
+PlutusTx.makeLift ''AuctionParams
+
+---------------------
+data AuctionDatum 
+    = AuctionDatum
+        { adHighestBid :: !(Maybe Bid)
+        , adBidders  :: !Bidders
+        , aThreader :: !ThreadToken
+        } 
+    | Finished
+        deriving P.Show
+
+PlutusTx.unstableMakeIsData ''AuctionDatum
+PlutusTx.makeLift ''AuctionDatum
+
+instance Eq AuctionDatum where
+    {-# INLINABLE (==) #-}
+    AuctionDatum x y z == AuctionDatum x' y' z'= (x == x') && (y == y') && (z == z')
+    Finished           == Finished             = True
+    _                  == _                    = False
+
+---------------------
 data AuctionRedeemer 
     = Register !Registration
     | Approve PubKeyHash Approvals
@@ -88,25 +126,7 @@ data AuctionRedeemer
 PlutusTx.unstableMakeIsData ''AuctionRedeemer
 PlutusTx.makeLift ''AuctionRedeemer
 
-
-data AuctionDatum 
-    = AuctionDatum
-        { adAuction    :: !Auction
-        , adHighestBid :: !(Maybe Bid)
-        } 
-    | Finished
-        deriving P.Show
-
-PlutusTx.unstableMakeIsData ''AuctionDatum
-PlutusTx.makeLift ''AuctionDatum
-
-instance Eq AuctionDatum where
-    {-# INLINABLE (==) #-}
-    AuctionDatum x y == AuctionDatum x' y' = (x == x') && (y == y')
-    Finished         == Finished           = True
-    _                == _                  = False
-
-
+---------------------
 data StartParams = StartParams
     { spDeadline :: !POSIXTime
     , spMinBid   :: !Integer
@@ -114,14 +134,12 @@ data StartParams = StartParams
     , spToken    :: !TokenName    
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
  
-
+---------------------
 data ApproveParams = ApproveParams
     { apApprovals :: ![PubKeyHash] -- todo: use Non Empty List
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
-
+---------------------
 data BidParams = BidParams
     { bpBid    :: !Integer
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
-
-

@@ -244,9 +244,21 @@ isFinal _        = False
 
 
 {-# INLINABLE transition #-}
-transition :: Auction -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
-transition auction s r = case (stateValue s, stateData s, r) of 
+transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
+transition params s r = case (stateValue s, stateData s, r) of 
+
+-- traceIfFalse "wrong input value" correctInputValue &&
+    -- case redeemer of
+    --     Register reg ->
+    --         traceIfFalse "registeree is seller" (not $ isSeller pkhR) &&
+    --         traceIfFalse "registeree already registered or approved" (not $ isAtLeastRegistered (aBidders auction) pkhR) &&
+    --         traceIfFalse "wrong register output datum" (correctRegisterOutputDatum reg) &&
+    --         traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
+    --         where pkhR = pkhForRegistration reg
+
     (v, AuctionDatum auction _,            Register) ->
+
+
     (v, AuctionDatum auction _,            Approve approverPkh, approvals) ->
     (v, AuctionDatum auction mbHighestBid, MkBid bid) ->
     (v, AuctionDatum auction mbHighestBid, Close) ->
