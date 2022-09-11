@@ -45,7 +45,7 @@ auctionDatum o f = do
     PlutusTx.fromBuiltinData d
 
 
--- todo https://discord.com/channels/826816523368005654/826829805387120690/1018619653335023767
+-- todo: throw errors? https://discord.com/channels/826816523368005654/826829805387120690/1018619653335023767
 {-# INLINABLE transition #-}
 transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
 transition params s r = case (stateValue s, stateData s, r) of 
@@ -59,10 +59,27 @@ transition params s r = case (stateValue s, stateData s, r) of
     --         traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
     --         where pkhR = pkhForRegistration reg
 
-    (v, InProgress highest bidders, Register pkh) 
-        | (not $ isSeller pkh)
+    (v, InProgress h bidders, Register pkh) 
+        --   (not $ isBidderRegistered bidders pkh) && 
+        --   (not $ isBidderApproved bidders pkh)    
+        | (not $ isSeller pkh) && (eiReg isRight) ->
+            let 
+                constraints =
+                    Constraints.mustBeSignedBy pkh <>
+                    mempty
 
-        where pkhR = pkhForRegistration reg
+                newState =
+                    State
+                        { stateData = InProgress h $ registerBidder bidders $ fromRight' eiReg 
+                        , stateValue = v
+                        }
+            in 
+                Just (constraints, newState)
+
+        where eiReg = validateRegisteree bidders pkh
+
+
+
 
 
     (v, AuctionDatum auction _, Approve approverPkh, approvals) ->

@@ -112,8 +112,8 @@ start StartParams{..} = do
     logInfo @String $ printf "started auction %s for value-with-token %s" (show a) (show v)
    
 
-register :: Contract w AuctionSchema T.Text ()
-register = do
+register' :: Contract w AuctionSchema T.Text ()
+register' = do
     -- mbX <- findViaAnchor rpAnchor
     -- (oref, o, d@AuctionDatum{..}) <- case mbX of
     --     Nothing -> throwError "anchor not found" 
@@ -144,6 +144,22 @@ register = do
     logInfo @String $ printf "registered bidder %s" $ show pkh
 
  
+register :: Contract w AuctionSchema T.Text ()
+register = do
+    let
+        lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
+                  Constraints.otherScript auctionValidator                <>
+                  Constraints.unspentOutputs (Map.singleton oref o)
+
+        tx      = Constraints.mustPayToTheScript d' v                     <>
+                  Constraints.mustSpendScriptOutput oref r
+
+    ledgerTx <- submitTxConstraintsWith lookups tx
+    void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
+
+    logInfo @String $ printf "registered bidder %s" $ show pkh
+
+
 approve :: ApproveParams -> Contract w AuctionSchema T.Text ()
 approve ApproveParams{..} = do
     when (null apApprovals) $ throwError $ T.pack "list may not be empty" 
