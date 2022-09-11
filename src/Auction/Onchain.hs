@@ -65,8 +65,7 @@ transition params s r = case (stateValue s, stateData s, r) of
         | (not $ isSeller pkh) && (eiReg isRight) ->
             let 
                 constraints =
-                    Constraints.mustBeSignedBy pkh <>
-                    mempty
+                    Constraints.mustBeSignedBy pkh 
 
                 newState =
                     State
