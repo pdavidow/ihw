@@ -7,8 +7,7 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Auction.Onchain
-    ( auctionAddress
-    , auctionHash    
+    ( auctionAddress  
     , auctionValidator
     , typedAuctionValidator
     , Auction.Onchain.typedValidator
@@ -16,47 +15,15 @@ module Auction.Onchain
     where
 
 import           Ledger
-                    ( pubKeyHashAddress,
-                    scriptHashAddress,
-                    findDatum,
-                    getContinuingOutputs,
-                    contains,
-                    from,
-                    to,
-                    Address,
-                    ScriptContext(scriptContextTxInfo),
-                    TxInInfo(txInInfoResolved),
-                    TxInfo(txInfoInputs, txInfoValidRange, txInfoOutputs),
-                    PubKeyHash,
-                    Datum(Datum),
-                    Validator,
-                    ValidatorHash,
-                    TxOut(txOutDatumHash, txOutValue, txOutAddress),
-                    Value )
 import           Ledger.Ada as Ada ( lovelaceValueOf )
 import qualified Ledger.Typed.Scripts as Scripts  
 import           Plutus.Contract.StateMachine
 import qualified PlutusTx
 import           PlutusTx.Prelude
-                    ( Bool(..),
-                    Integer,
-                    Maybe(Just, Nothing),
-                    ($),
-                    (.),
-                    (&&),
-                    not,
-                    null,
-                    maybe,
-                    traceError,
-                    traceIfFalse,
-                    Eq((==)),
-                    AdditiveSemigroup((+)),
-                    Ord((>=)),
-                    Semigroup((<>)) )
 
-import           Auction.Bidders ( Approvals, Registration, pkhForRegistration, pkhsForApprovals, isBidderApproved, isAllRegisterd, isAtLeastRegistered, registerBidder, approveBidders )
-import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
-import           Auction.Types ( Auction(..), Bid(..), AuctionRedeemer(..), AuctionDatum(..), Seller(..) )
+import           Auction.Bidders 
+import           Auction.Share 
+import           Auction.Types 
 
 
 {-# INLINABLE isFinal #-}

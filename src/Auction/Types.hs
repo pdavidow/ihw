@@ -67,7 +67,7 @@ PlutusTx.makeLift ''AuctionParams
 
 ---------------------
 data AuctionDatum 
-    = AuctionDatum
+    = InProgress
         { adHighestBid :: !(Maybe Bid)
         , adBidders :: !Bidders
         } 
@@ -79,9 +79,9 @@ PlutusTx.makeLift ''AuctionDatum
 
 instance Eq AuctionDatum where
     {-# INLINABLE (==) #-}
-    AuctionDatum x y == AuctionDatum x' y' = (x == x') && (y == y')
-    Finished           == Finished             = True
-    _                  == _                    = False
+    InProgress x y == InProgress x' y' = (x == x') && (y == y')
+    Finished == Finished = True
+    _ == _ = False
 
 ---------------------
 data AuctionRedeemer 
@@ -103,7 +103,7 @@ data StartParams = StartParams
  
 ---------------------
 data ApproveParams = ApproveParams
-    { apApprovals :: ![PubKeyHash] -- todo: use Non Empty List
+    { apApprovals :: ![PubKeyHash] -- todo: use NonEmpty List
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 ---------------------
