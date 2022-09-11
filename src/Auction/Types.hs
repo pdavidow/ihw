@@ -96,9 +96,8 @@ PlutusTx.unstableMakeIsData ''AuctionRedeemer
 ---------------------
 data StartParams = StartParams
     { spDeadline :: !POSIXTime
-    , spMinBid   :: !Integer
-    , spCurrency :: !CurrencySymbol
-    , spToken    :: !TokenName    
+    , spMinBid :: !Integer
+    , spAsset :: !AssetClass  
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
  
 ---------------------

@@ -8,6 +8,7 @@
 
 module Auction.Onchain
     ( auctionAddress  
+    , auctionClient
     , auctionValidator
     , typedAuctionValidator
     , Auction.Onchain.typedValidator

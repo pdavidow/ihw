@@ -81,8 +81,8 @@ endpoints = awaitPromise
     approve'  = endpoint @"approve"  approve
 
 
-start :: StartParams -> Contract (Last ThreadToken) AuctionSchema T.Text ()
-start StartParams{..} = do         
+start' :: StartParams -> Contract (Last ThreadToken) AuctionSchema T.Text ()
+start' StartParams{..} = do         
     pkh <- ownPubKeyHash         
     threadToken  <- mapError' getThreadToken
 
@@ -111,6 +111,34 @@ start StartParams{..} = do
 
     logInfo @String $ printf "started auction %s for value-with-token %s" (show a) (show v)
    
+
+mapErrorSM :: Contract w s SMContractError a -> Contract w s Text a
+mapErrorSM = mapError $ pack . show
+
+
+start :: StartParams -> Contract (Last AuctionParams) AuctionSchema T.Text ()
+start StartParams{..} = do         
+    pkh <- ownPubKeyHash         
+    threadToken <- mapErrorSM getThreadToken
+
+    let params =             
+            AuctionParams
+                { apSeller = pkh
+                , apDeadline = spDeadline
+                , apMinBid = spMinBid
+                , apAsset = spAsset
+                , apAnchor = threadToken 
+                } 
+
+    let client = auctionClient params
+    let datum = InProgress Nothing mkBidders
+    let val = auctionedTokenValue a <> Ada.lovelaceValueOf minLovelace
+       
+    void $ mapErrorSM $ runInitialise client datum val
+    tell $ Last $ Just params
+
+    logInfo $ "started auction: " ++ show params
+
 
 register' :: Contract w AuctionSchema T.Text ()
 register' = do
@@ -146,18 +174,7 @@ register' = do
  
 register :: Contract w AuctionSchema T.Text ()
 register = do
-    let
-        lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
-                  Constraints.otherScript auctionValidator                <>
-                  Constraints.unspentOutputs (Map.singleton oref o)
 
-        tx      = Constraints.mustPayToTheScript d' v                     <>
-                  Constraints.mustSpendScriptOutput oref r
-
-    ledgerTx <- submitTxConstraintsWith lookups tx
-    void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
-
-    logInfo @String $ printf "registered bidder %s" $ show pkh
 
 
 approve :: ApproveParams -> Contract w AuctionSchema T.Text ()
