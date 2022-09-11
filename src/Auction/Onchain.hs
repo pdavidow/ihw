@@ -67,12 +67,7 @@ isFinal _        = False
 
 {-# INLINABLE auctionStateMachine #-}
 auctionStateMachine :: AuctionParams -> StateMachine AuctionDatum AuctionRedeemer
-auctionStateMachine params = StateMachine
-    { smTransition  = transition params
-    , smFinal       = final
-    , smCheck       = check ??????????????
-    , smThreadToken = Just $ apThreader params
-    }
+auctionStateMachine params = mkStateMachine (Just $ apThreader params) (transition params) isFinal
 
 
 {-# INLINABLE transition #-}
@@ -98,7 +93,7 @@ transition params s r = case (stateValue s, stateData s, r) of
 
 {-# INLINABLE mkAuctionValidator #-}
 mkAuctionValidator :: AuctionParams -> AuctionDatum -> AuctionRedeemer -> ScriptContext -> Bool
-mkAuctionValidator params datum redeemer ctx = mkValidator $ auctionStateMachine game
+mkAuctionValidator params = mkValidator $ auctionStateMachine params
 
 
 type Auctioning = StateMachine AuctionDatum AuctionRedeemer
