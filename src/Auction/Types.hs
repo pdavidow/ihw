@@ -60,7 +60,7 @@ data AuctionParams = AuctionParams
     , apDeadline :: !POSIXTime
     , apMinBid :: !Integer
     , apAsset :: !AssetClass
-    , apThreader :: !ThreadToken    
+    , apAnchor :: !ThreadToken    
     } deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON)
 
 PlutusTx.makeLift ''AuctionParams
@@ -85,7 +85,7 @@ instance Eq AuctionDatum where
 
 ---------------------
 data AuctionRedeemer 
-    = Register !Registration
+    = Register !PubKeyHash
     | Approve PubKeyHash Approvals
     | MkBid !Bid 
     | Close 

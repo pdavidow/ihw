@@ -34,9 +34,18 @@ isFinal _        = False
 
 {-# INLINABLE auctionStateMachine #-}
 auctionStateMachine :: AuctionParams -> StateMachine AuctionDatum AuctionRedeemer
-auctionStateMachine params = mkStateMachine (Just $ apThreader params) (transition params) isFinal
+auctionStateMachine params = mkStateMachine (Just $ apAnchor params) (transition params) isFinal
 
 
+{-# INLINABLE auctionDatum #-}
+auctionDatum :: TxOut -> (DatumHash -> Maybe Datum) -> Maybe AuctionDatum
+auctionDatum o f = do
+    dh      <- txOutDatum o
+    Datum d <- f dh
+    PlutusTx.fromBuiltinData d
+
+
+-- todo https://discord.com/channels/826816523368005654/826829805387120690/1018619653335023767
 {-# INLINABLE transition #-}
 transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
 transition params s r = case (stateValue s, stateData s, r) of 
@@ -50,10 +59,13 @@ transition params s r = case (stateValue s, stateData s, r) of
     --         traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
     --         where pkhR = pkhForRegistration reg
 
-    (v, AuctionDatum auction _,            Register) ->
+    (v, InProgress highest bidders, Register pkh) 
+        | (not $ isSeller pkh)
+
+        where pkhR = pkhForRegistration reg
 
 
-    (v, AuctionDatum auction _,            Approve approverPkh, approvals) ->
+    (v, AuctionDatum auction _, Approve approverPkh, approvals) ->
     (v, AuctionDatum auction mbHighestBid, MkBid bid) ->
     (v, AuctionDatum auction mbHighestBid, Close) ->
     _ -> Nothing
@@ -83,11 +95,11 @@ auctionAddress :: AuctionParams -> Ledger.Address
 auctionAddress = scriptAddress . auctionValidator    
 
 
-{-# INLINEABLE typedValidator #-}
-typedValidator :: Scripts.TypedValidator Scripts.Any
-typedValidator = Scripts.unsafeMkTypedValidator auctionValidator
+auctionClient :: AuctionParams -> StateMachineClient AuctionDatum AuctionRedeemer
+auctionClient params = mkStateMachineClient $ StateMachineInstance (auctionStateMachine params) (typedAuctionValidator params)
 
 
+-- todo unused
 {-# INLINABLE mkAuctionValidator' #-}
 mkAuctionValidator' :: AuctionDatum -> AuctionRedeemer -> ScriptContext -> Bool
 mkAuctionValidator' ad redeemer ctx = 
