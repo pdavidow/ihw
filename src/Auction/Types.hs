@@ -9,7 +9,6 @@
 
 module Auction.Types
     ( ApproveParams(..)
-    , Auction(..)
     , AuctionRedeemer(..)
     , AuctionDatum(..)
     , Bid(..)
@@ -22,8 +21,8 @@ module Auction.Types
 import           Data.Aeson (FromJSON, ToJSON)
 import           GHC.Generics (Generic)
 
-import           Ledger ( PubKeyHash, POSIXTime ) 
-import           Ledger.Value as Value ( TokenName, CurrencySymbol )
+import           Ledger  
+import           Ledger.Value as Value 
 import           Plutus.Contract.StateMachine
 import qualified PlutusTx
 import           PlutusTx.Prelude 
@@ -55,53 +54,22 @@ PlutusTx.unstableMakeIsData ''Bid
 PlutusTx.makeLift ''Bid
 
 
--- data Auction = Auction
---     { aSeller   :: !Seller
---     , aBidders  :: !Bidders
---     , aDeadline :: !POSIXTime
---     , aMinBid   :: !Integer
---     , aCurrency :: !CurrencySymbol
---     , aToken    :: !TokenName
---     , aThreader :: !ThreadToken
---     } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
-
--- instance Eq Auction where
---     {-# INLINABLE (==) #-}
---     a == b = (aSeller   a == aSeller   b) &&
---              (aBidders  a == aBidders  b) &&    
---              (aDeadline a == aDeadline b) &&
---              (aMinBid   a == aMinBid   b) &&
---              (aCurrency a == aCurrency b) &&
---              (aToken    a == aToken    b)
-
--- PlutusTx.unstableMakeIsData ''Auction
--- PlutusTx.makeLift ''Auction
-
 ---------------------
 data AuctionParams = AuctionParams
-    { apSeller   :: !Seller
+    { apSeller :: !Seller
     , apDeadline :: !POSIXTime
-    , apMinBid   :: !Integer
-    , apCurrency :: !CurrencySymbol -- todo AssetClass
-    , apToken    :: !TokenName      -- "      "
-    } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
+    , apMinBid :: !Integer
+    , apAsset :: !AssetClass
+    , apThreader :: !ThreadToken    
+    } deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON)
 
-instance Eq AuctionParams where
-    {-# INLINABLE (==) #-}
-    a == b = (apSeller   a == apSeller   b) &&
-             (apDeadline a == apDeadline b) &&
-             (apMinBid   a == apMinBid   b) &&
-             (apCurrency a == apCurrency b) 
-
-PlutusTx.unstableMakeIsData ''AuctionParams
 PlutusTx.makeLift ''AuctionParams
 
 ---------------------
 data AuctionDatum 
     = AuctionDatum
         { adHighestBid :: !(Maybe Bid)
-        , adBidders  :: !Bidders
-        , aThreader :: !ThreadToken
+        , adBidders :: !Bidders
         } 
     | Finished
         deriving P.Show
@@ -111,7 +79,7 @@ PlutusTx.makeLift ''AuctionDatum
 
 instance Eq AuctionDatum where
     {-# INLINABLE (==) #-}
-    AuctionDatum x y z == AuctionDatum x' y' z'= (x == x') && (y == y') && (z == z')
+    AuctionDatum x y == AuctionDatum x' y' = (x == x') && (y == y')
     Finished           == Finished             = True
     _                  == _                    = False
 
@@ -124,7 +92,6 @@ data AuctionRedeemer
     deriving P.Show
 
 PlutusTx.unstableMakeIsData ''AuctionRedeemer
-PlutusTx.makeLift ''AuctionRedeemer
 
 ---------------------
 data StartParams = StartParams

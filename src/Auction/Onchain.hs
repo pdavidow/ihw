@@ -59,30 +59,66 @@ import           Auction.Share ( minBid, minLovelace, auctionedTokenValue )
 import           Auction.Types ( Auction(..), Bid(..), AuctionRedeemer(..), AuctionDatum(..), Seller(..) )
 
 
-data Auctioning
-instance Scripts.ValidatorTypes Auctioning where
-    type instance RedeemerType Auctioning = AuctionRedeemer
-    type instance DatumType Auctioning = AuctionDatum
+{-# INLINABLE isFinal #-}
+isFinal :: AuctionDatum -> Bool
+isFinal Finished = True
+isFinal _        = False
 
 
-typedAuctionValidator :: Scripts.TypedValidator Auctioning
-typedAuctionValidator = Scripts.mkTypedValidator @Auctioning
-    $$(PlutusTx.compile [|| mkAuctionValidator ||])
+{-# INLINABLE auctionStateMachine #-}
+auctionStateMachine :: AuctionParams -> StateMachine AuctionDatum AuctionRedeemer
+auctionStateMachine params = StateMachine
+    { smTransition  = transition params
+    , smFinal       = final
+    , smCheck       = check ??????????????
+    , smThreadToken = Just $ apThreader params
+    }
+
+
+{-# INLINABLE transition #-}
+transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
+transition params s r = case (stateValue s, stateData s, r) of 
+
+-- traceIfFalse "wrong input value" correctInputValue &&
+    -- case redeemer of
+    --     Register reg ->
+    --         traceIfFalse "registeree is seller" (not $ isSeller pkhR) &&
+    --         traceIfFalse "registeree already registered or approved" (not $ isAtLeastRegistered (aBidders auction) pkhR) &&
+    --         traceIfFalse "wrong register output datum" (correctRegisterOutputDatum reg) &&
+    --         traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
+    --         where pkhR = pkhForRegistration reg
+
+    (v, AuctionDatum auction _,            Register) ->
+
+
+    (v, AuctionDatum auction _,            Approve approverPkh, approvals) ->
+    (v, AuctionDatum auction mbHighestBid, MkBid bid) ->
+    (v, AuctionDatum auction mbHighestBid, Close) ->
+    _ -> Nothing
+
+{-# INLINABLE mkAuctionValidator #-}
+mkAuctionValidator :: AuctionParams -> AuctionDatum -> AuctionRedeemer -> ScriptContext -> Bool
+mkAuctionValidator params datum redeemer ctx = mkValidator $ auctionStateMachine game
+
+
+type Auctioning = StateMachine AuctionDatum AuctionRedeemer
+
+
+typedAuctionValidator :: AuctionParams -> Scripts.TypedValidator Auctioning
+typedAuctionValidator params = Scripts.mkTypedValidator @Auctioning
+    ($$(PlutusTx.compile [|| mkAuctionValidator ||])
+        `PlutusTx.applyCode` PlutusTx.liftCode params)
     $$(PlutusTx.compile [|| wrap ||])
   where
     wrap = Scripts.wrapValidator @AuctionDatum @AuctionRedeemer
 
 
-auctionValidator :: Validator
-auctionValidator = Scripts.validatorScript typedAuctionValidator
+auctionValidator :: AuctionParams -> Validator
+auctionValidator = Scripts.validatorScript . typedAuctionValidator
 
 
-auctionHash :: Ledger.ValidatorHash
-auctionHash = Scripts.validatorHash typedAuctionValidator
-
-
-auctionAddress :: Ledger.Address
-auctionAddress = scriptHashAddress auctionHash    
+auctionAddress :: AuctionParams -> Ledger.Address
+auctionAddress = scriptAddress . auctionValidator    
 
 
 {-# INLINEABLE typedValidator #-}
@@ -90,9 +126,9 @@ typedValidator :: Scripts.TypedValidator Scripts.Any
 typedValidator = Scripts.unsafeMkTypedValidator auctionValidator
 
 
-{-# INLINABLE mkAuctionValidator #-}
-mkAuctionValidator :: AuctionDatum -> AuctionRedeemer -> ScriptContext -> Bool
-mkAuctionValidator ad redeemer ctx = 
+{-# INLINABLE mkAuctionValidator' #-}
+mkAuctionValidator' :: AuctionDatum -> AuctionRedeemer -> ScriptContext -> Bool
+mkAuctionValidator' ad redeemer ctx = 
     traceIfFalse "wrong input value" correctInputValue &&
 
     case redeemer of
@@ -237,29 +273,3 @@ mkAuctionValidator ad redeemer ctx =
 
 ---------
 
-{-# INLINABLE isFinal #-}
-isFinal :: AuctionDatum -> Bool
-isFinal Finished = True
-isFinal _        = False
-
-
-{-# INLINABLE transition #-}
-transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
-transition params s r = case (stateValue s, stateData s, r) of 
-
--- traceIfFalse "wrong input value" correctInputValue &&
-    -- case redeemer of
-    --     Register reg ->
-    --         traceIfFalse "registeree is seller" (not $ isSeller pkhR) &&
-    --         traceIfFalse "registeree already registered or approved" (not $ isAtLeastRegistered (aBidders auction) pkhR) &&
-    --         traceIfFalse "wrong register output datum" (correctRegisterOutputDatum reg) &&
-    --         traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
-    --         where pkhR = pkhForRegistration reg
-
-    (v, AuctionDatum auction _,            Register) ->
-
-
-    (v, AuctionDatum auction _,            Approve approverPkh, approvals) ->
-    (v, AuctionDatum auction mbHighestBid, MkBid bid) ->
-    (v, AuctionDatum auction mbHighestBid, Close) ->
-    _ -> Nothing
