@@ -81,35 +81,35 @@ endpoints = awaitPromise
     approve'  = endpoint @"approve"  approve
 
 
-start' :: StartParams -> Contract (Last ThreadToken) AuctionSchema T.Text ()
-start' StartParams{..} = do         
-    pkh <- ownPubKeyHash         
-    threadToken  <- mapError' getThreadToken
+-- start' :: StartParams -> Contract (Last ThreadToken) AuctionSchema T.Text ()
+-- start' StartParams{..} = do         
+--     pkh <- ownPubKeyHash         
+--     threadToken  <- mapError' getThreadToken
 
-    let a = Auction
-            { aSeller   = Seller pkh
-            , aBidders  = mkBidders
-            , aDeadline = spDeadline
-            , aMinBid   = spMinBid
-            , aCurrency = spCurrency
-            , aToken    = spToken
-            }
+--     let a = Auction
+--             { aSeller   = Seller pkh
+--             , aBidders  = mkBidders
+--             , aDeadline = spDeadline
+--             , aMinBid   = spMinBid
+--             , aCurrency = spCurrency
+--             , aToken    = spToken
+--             }
  
-    let d = AuctionDatum
-            { adAuction    = a
-            , adHighestBid = Nothing
-            }
+--     let d = AuctionDatum
+--             { adAuction    = a
+--             , adHighestBid = Nothing
+--             }
  
-    let v = auctionedTokenValue a <> Ada.lovelaceValueOf minLovelace
+--     let v = auctionedTokenValue a <> Ada.lovelaceValueOf minLovelace
 
-    let tx = Constraints.mustPayToTheScript (PlutusTx.toBuiltinData d) v
+--     let tx = Constraints.mustPayToTheScript (PlutusTx.toBuiltinData d) v
 
-    ledgerTx <- submitTxConstraints typedValidator tx       
-    void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
+--     ledgerTx <- submitTxConstraints typedValidator tx       
+--     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
 
-    tell $ Last $ Just threadToken
+--     tell $ Last $ Just threadToken
 
-    logInfo @String $ printf "started auction %s for value-with-token %s" (show a) (show v)
+--     logInfo @String $ printf "started auction %s for value-with-token %s" (show a) (show v)
    
 
 mapErrorSM :: Contract w s SMContractError a -> Contract w s Text a
@@ -123,7 +123,7 @@ start StartParams{..} = do
 
     let params =             
             AuctionParams
-                { apSeller = pkh
+                { apSeller = Seller pkh
                 , apDeadline = spDeadline
                 , apMinBid = spMinBid
                 , apAsset = spAsset
@@ -132,7 +132,7 @@ start StartParams{..} = do
 
     let client = auctionClient params
     let datum = InProgress Nothing mkBidders
-    let val = auctionedTokenValue a <> Ada.lovelaceValueOf minLovelace
+    let val = auctionedTokenValue (apAsset params) <> Ada.lovelaceValueOf minLovelace
        
     void $ mapErrorSM $ runInitialise client datum val
     tell $ Last $ Just params

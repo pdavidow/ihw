@@ -58,7 +58,7 @@ PlutusTx.makeLift ''Bid
 data AuctionParams = AuctionParams
     { apSeller :: !Seller
     , apDeadline :: !POSIXTime
-    , apMinBid :: !Integer
+    , apMinBid :: !Integer -- todo Nat-ish
     , apAsset :: !AssetClass
     , apAnchor :: !ThreadToken    
     } deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON)
