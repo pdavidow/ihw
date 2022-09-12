@@ -35,10 +35,10 @@ import           Auction.Types
 
 type AuctionSchema =
         Endpoint "start"    StartParams
-    .\/ Endpoint "bid"      BidParams
-    .\/ Endpoint "close"    
-    .\/ Endpoint "register" 
-    .\/ Endpoint "approve"  ApproveParams
+    .\/ Endpoint "bid"      AuctionParams
+    .\/ Endpoint "close"    AuctionParams
+    .\/ Endpoint "register" AuctionParams
+    .\/ Endpoint "approve"  AuctionParams
 
 
 endpoints :: Contract (Last ThreadToken) AuctionSchema T.Text ()
@@ -57,8 +57,8 @@ endpoints = awaitPromise
     approve'  = endpoint @"approve"  approve
 
 
-mapErrorSM :: Contract w s SMContractError a -> Contract w s Text a
-mapErrorSM = mapError $ pack . show
+mapErrorSM :: Contract w s SMContractError a -> Contract w s T.Text a
+mapErrorSM = mapError $ T.pack . show
 
 
 start :: StartParams -> Contract (Last AuctionParams) AuctionSchema T.Text ()
@@ -104,4 +104,4 @@ bid params n = do
 
 
 close :: AuctionParams -> Contract w AuctionSchema T.Text ()
-cose params = mapErrorSM $ runStep (auctionClient params) Close
+close params = void $ mapErrorSM $ runStep (auctionClient params) Close

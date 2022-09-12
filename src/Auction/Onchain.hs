@@ -11,7 +11,6 @@ module Auction.Onchain
     , auctionClient
     , auctionValidator
     , typedAuctionValidator
-    , Auction.Onchain.typedValidator
     )    
     where
 
@@ -80,20 +79,20 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
                 newState = State (InProgress h bidders') v   
 
     (v, InProgress h bidders, MkBid b@(Bid pkh n)) 
-        |  (n >= maybe apMinBid (+1) h) 
+        |  (n >= maybe apMinBid (\x -> bBid x + 1) h) 
         && isBidderApproved bidders pkh
         -> Just (constraints, newState)
             where 
                 h' = Just b 
                 v' = auctionedTokenValue apAsset <> Ada.lovelaceValueOf (minLovelace + n)
-                payBackPrev = \x -> Constraints.mustPayToPubKey (bBidder x) (Ada.lovelaceValueOf $ x bid)
+                payBackPrev = \x -> Constraints.mustPayToPubKey (bBidder x) (Ada.lovelaceValueOf $ bBid x)
                 constraints 
                     =  Constraints.mustBeSignedBy pkh  
                     <> Constraints.mustValidateIn (to apDeadline)  
                     <> maybe mempty payBackPrev h
                 newState = State (InProgress h' bidders) v'   
 
-    (v, InProgress h bidders, Close) 
+    (v, InProgress h _, Close) 
         -> Just (constraints, newState)
             where 
                 seller = unSeller apSeller
@@ -106,7 +105,7 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
                                 -> Constraints.mustPayToPubKey seller val
 
                             Just x 
-                                -> Constraints.mustPayToPubKey bBidder val 
+                                -> Constraints.mustPayToPubKey (bBidder x) val 
                                 <> Constraints.mustPayToPubKey seller (Ada.lovelaceValueOf $ bBid x) 
                        )
 
