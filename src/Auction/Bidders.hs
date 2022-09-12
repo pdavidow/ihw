@@ -15,6 +15,7 @@ module Auction.Bidders
     , Registration -- hide constructor
     , approveBidders  
     , mkBidders   
+    , isAnyApprovals
     , isBidderApproved
     , isAllRegisterd
     , isAtLeastRegistered
@@ -34,18 +35,10 @@ import           GHC.Generics (Generic)
 import           Ledger ( PubKeyHash ) 
 import qualified PlutusTx
 import           PlutusTx.Prelude
-                    ( otherwise,
-                    Bool(..),
-                    Maybe(Just),
-                    Either(..),
-                    ($),
-                    (.),
-                    all,
-                    foldr,
-                    Eq(..) ) 
 import qualified PlutusTx.AssocMap as AssocMap
 import qualified Prelude as P   
 import           Schema (ToSchema)
+
 
 
 data Status = Registered | Approved
@@ -113,6 +106,11 @@ pkhForRegistration (Registration x) = x
 {-# INLINABLE pkhsForApprovals #-}
 pkhsForApprovals :: Approvals -> [PubKeyHash]
 pkhsForApprovals (Approvals xs) = xs
+
+
+{-# INLINABLE isAnyApprovals #-}
+isAnyApprovals :: Approvals -> Bool 
+isAnyApprovals (Approvals xs) = not $ null xs
 
 
 {-# INLINABLE isBidderRegistered #-}

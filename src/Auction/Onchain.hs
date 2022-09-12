@@ -69,7 +69,7 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
     (v, InProgress h bidders, Approve approver approvees)  
         |  isSeller approver
         && notNull approvees
-        && notNull approvals
+        && isAnyApprovals approvals
         -> Just (constraints, newState)
             where 
                 (approvals, _, _) = validateApprovees bidders approvees
