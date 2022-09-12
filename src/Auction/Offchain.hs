@@ -11,50 +11,26 @@ module Auction.Offchain
     )
     where
   
-import           Control.Monad ( unless, when, void ) 
+import           Control.Monad 
 import qualified Data.Map as Map
 import           Data.Monoid (Last (..))
 import qualified Data.Text as T
-import           Text.Printf (printf)
+import           Text.Printf 
 
 import           Ledger
-                    ( toTxOut,
-                    from,
-                    to,
-                    getCardanoTxId,
-                    TxOut(txOutValue),
-                    Redeemer(Redeemer),
-                    ChainIndexTxOut,
-                    TxOutRef )
 import           Ledger.Ada as Ada ( lovelaceValueOf )
 import qualified Ledger.Constraints as Constraints
-import           Plutus.ChainIndex.Tx ( ChainIndexTx(_citxData) )
+import           Plutus.ChainIndex.Tx 
 import           Plutus.Contract
-                    ( utxosTxOutTxAt,
-                    mapError,
-                    logError,
-                    submitTxConstraintsWith,
-                    logInfo,
-                    tell,
-                    awaitTxConfirmed,
-                    submitTxConstraints,
-                    ownPubKeyHash,
-                    endpoint,
-                    select,
-                    type (.\/),
-                    Endpoint,
-                    throwError,
-                    Promise(awaitPromise),
-                    Contract )
 import           Plutus.Contract.StateMachine
 import qualified PlutusTx
-import           Ledger.Value ( assetClassValueOf ) 
+import           Ledger.Value 
 import qualified Plutus.Contracts.Currency as Currency
 
-import           Auction.Bidders ( NotRegistereds(..), AlreadyApproveds(..), pkhsForApprovals, mkBidders, isBidderApproved, registerBidder, approveBidders, validateRegisteree, validateApprovees )
-import           Auction.Onchain ( auctionAddress, auctionValidator, typedAuctionValidator, typedValidator )                   
-import           Auction.Share ( auctionDatum, minBid, minLovelace, auctionedTokenValue )
-import           Auction.Types ( Auction(..), Bid(..), AuctionRedeemer(..), AuctionDatum(..), BidParams(..), ApproveParams(..), Seller(..), StartParams(..) )
+import           Auction.Bidders 
+import           Auction.Onchain 
+import           Auction.Share
+import           Auction.Types 
 
 
 type AuctionSchema =

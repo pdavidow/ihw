@@ -77,18 +77,19 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
                     <> Constraints.mustValidateIn (to apDeadline)       
                 newState = State (InProgress h bidders') v   
 
-    (v, InProgress h bidders, MkBid (Bid pkh n)) 
-        |  (n >= minBid stateData) 
+    (v, InProgress h bidders, MkBid b@(Bid pkh n)) 
+        |  (n >= maybe apMinBid (+1) h) 
         && isBidderApproved bidders pkh
         -> Just (constraints, newState)
             where 
+                h' = Just b 
                 v' = auctionedTokenValue apAsset <> Ada.lovelaceValueOf (minLovelace + n)
                 payBackPrev = \x -> Constraints.mustPayToPubKey (bBidder x) (Ada.lovelaceValueOf $ x bid)
                 constraints 
                     =  Constraints.mustBeSignedBy pkh  
                     <> Constraints.mustValidateIn (to apDeadline)  
                     <> maybe mempty payBackPrev h
-                newState = State (InProgress h bidders) v'   
+                newState = State (InProgress h' bidders) v'   
 
     (v, InProgress h bidders, Close) 
         -> Just (constraints, newState)

@@ -4,7 +4,6 @@
 module Auction.Share
     ( auctionDatum
     , auctionedTokenValue
-    , minBid
     , minLovelace
     ) 
     where
@@ -14,14 +13,7 @@ import           Ledger.Value as Value ( Value, singleton )
 import qualified PlutusTx
 import           PlutusTx.Prelude ( Integer, Maybe(..), AdditiveSemigroup((+))) 
 
-import           Auction.Types ( Auction(..), Bid(..), AuctionDatum(..) )
-     
-
-{-# INLINABLE minBid #-}
-minBid :: AuctionDatum -> Integer
-minBid AuctionDatum{..} = case adHighestBid of
-    Nothing      -> aMinBid adAuction
-    Just Bid{..} -> bBid + 1
+import           Auction.Types 
 
 
 {-# INLINABLE auctionDatum #-}

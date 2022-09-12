@@ -8,8 +8,9 @@
 {-# LANGUAGE NoImplicitPrelude     #-}
 
 module Auction.Types
-    ( AuctionRedeemer(..)
-    , AuctionDatum(..)
+    ( AuctionDatum(..)
+    , AuctionParams(..)
+    , AuctionRedeemer(..)
     , Bid(..)
     , Seller(..)
     , StartParams(..)
@@ -19,15 +20,14 @@ module Auction.Types
 import           Data.Aeson (FromJSON, ToJSON)
 import           GHC.Generics (Generic)
 
-import           Ledger  
-import           Ledger.Value as Value 
-import           Plutus.Contract.StateMachine
+import           Ledger ( POSIXTime, PubKeyHash(PubKeyHash), AssetClass )  
+import           Plutus.Contract.StateMachine ( ThreadToken )
 import qualified PlutusTx
-import           PlutusTx.Prelude 
+import           PlutusTx.Prelude ( Bool(..), Integer, Maybe, Eq(..), (&&) ) 
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Auction.Bidders ( Bidders, Approvals, Registration )
+import           Auction.Bidders ( Bidders )
 
 
 newtype Seller = Seller {unSeller :: PubKeyHash}
