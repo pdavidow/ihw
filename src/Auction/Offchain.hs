@@ -81,37 +81,6 @@ endpoints = awaitPromise
     approve'  = endpoint @"approve"  approve
 
 
--- start' :: StartParams -> Contract (Last ThreadToken) AuctionSchema T.Text ()
--- start' StartParams{..} = do         
---     pkh <- ownPubKeyHash         
---     threadToken  <- mapError' getThreadToken
-
---     let a = Auction
---             { aSeller   = Seller pkh
---             , aBidders  = mkBidders
---             , aDeadline = spDeadline
---             , aMinBid   = spMinBid
---             , aCurrency = spCurrency
---             , aToken    = spToken
---             }
- 
---     let d = AuctionDatum
---             { adAuction    = a
---             , adHighestBid = Nothing
---             }
- 
---     let v = auctionedTokenValue a <> Ada.lovelaceValueOf minLovelace
-
---     let tx = Constraints.mustPayToTheScript (PlutusTx.toBuiltinData d) v
-
---     ledgerTx <- submitTxConstraints typedValidator tx       
---     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
-
---     tell $ Last $ Just threadToken
-
---     logInfo @String $ printf "started auction %s for value-with-token %s" (show a) (show v)
-   
-
 mapErrorSM :: Contract w s SMContractError a -> Contract w s Text a
 mapErrorSM = mapError $ pack . show
 
@@ -139,47 +108,16 @@ start StartParams{..} = do
 
     logInfo $ "started auction: " ++ show params
 
-
-register' :: Contract w AuctionSchema T.Text ()
-register' = do
-    -- mbX <- findViaAnchor rpAnchor
-    -- (oref, o, d@AuctionDatum{..}) <- case mbX of
-    --     Nothing -> throwError "anchor not found" 
-    --     Just x -> pure x
-    -- logInfo @String $ printf "found auction utxo with datum %s" $ show d        
-
-    pkh <- ownPubKeyHash
-    when (pkh == unSeller (aSeller adAuction)) $ throwError $ T.pack $ printf "seller may not register" 
-
-    reg <- case validateRegisteree (aBidders adAuction) pkh of
-        Left e -> throwError e
-        Right x -> pure x
-
-    let d' = d {adAuction = adAuction {aBidders = registerBidder (aBidders adAuction) reg}}
-        v  = auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid adHighestBid)
-        r  = Redeemer $ PlutusTx.toBuiltinData $ Register reg
-
-        lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
-                  Constraints.otherScript auctionValidator                <>
-                  Constraints.unspentOutputs (Map.singleton oref o)
-
-        tx      = Constraints.mustPayToTheScript d' v                     <>
-                  Constraints.mustSpendScriptOutput oref r
-
-    ledgerTx <- submitTxConstraintsWith lookups tx
-    void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
-
-    logInfo @String $ printf "registered bidder %s" $ show pkh
-
  
-register :: Contract w AuctionSchema T.Text ()
-register = do
+register :: AuctionParams -> Contract w AuctionSchema T.Text ()
+register params = do
+    pkh <- ownPubKeyHash
+    void $ mapErrorSM $ runStep (auctionClient params) $ Register pkh
 
 
-
-approve :: ApproveParams -> Contract w AuctionSchema T.Text ()
-approve ApproveParams{..} = do
-    when (null apApprovals) $ throwError $ T.pack "list may not be empty" 
+approve' :: ApproveParams -> Contract w AuctionSchema T.Text ()
+approve' ApproveParams{..} = do
+    when (null appApprovals) $ throwError $ T.pack "list may not be empty" 
 
     -- mbX <- findViaAnchor apAnchor
     -- (oref, o, d@AuctionDatum{..}) <- case mbX of
@@ -212,7 +150,13 @@ approve ApproveParams{..} = do
 
     logInfo @String $ printf "approved bidders %s" $ show pkhsA
 
-  
+
+approve :: AuctionParams -> [PubKeyHash]  -> Contract w AuctionSchema T.Text ()
+approve params xs = do
+    pkh <- ownPubKeyHash
+    void $ mapErrorSM $ runStep (auctionClient params) $ Approve pkh xs
+
+
 bid :: BidParams -> Contract w AuctionSchema T.Text ()
 bid BidParams{..} = do 
     -- mbX <- findViaAnchor bpAnchor

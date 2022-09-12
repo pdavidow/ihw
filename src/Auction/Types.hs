@@ -8,8 +8,7 @@
 {-# LANGUAGE NoImplicitPrelude     #-}
 
 module Auction.Types
-    ( ApproveParams(..)
-    , AuctionRedeemer(..)
+    ( AuctionRedeemer(..)
     , AuctionDatum(..)
     , Bid(..)
     , BidParams(..)
@@ -86,7 +85,7 @@ instance Eq AuctionDatum where
 ---------------------
 data AuctionRedeemer 
     = Register !PubKeyHash
-    | Approve PubKeyHash Approvals
+    | Approve !PubKeyHash ![PubKeyHash]
     | MkBid !Bid 
     | Close 
     deriving P.Show
@@ -100,10 +99,6 @@ data StartParams = StartParams
     , spAsset :: !AssetClass  
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
  
----------------------
-data ApproveParams = ApproveParams
-    { apApprovals :: ![PubKeyHash] -- todo: use NonEmpty List
-    } deriving (Generic, ToJSON, FromJSON, ToSchema)
 
 ---------------------
 data BidParams = BidParams
