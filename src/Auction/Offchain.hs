@@ -127,40 +127,5 @@ bid params n = do
     void $ mapErrorSM $ runStep (auctionClient params) $ MkBid $ Bid self n
 
 
--- close' :: Contract w AuctionSchema T.Text ()
--- close' = do       
-    -- mbX <- findViaAnchor cpAnchor
-    -- (oref, o, d@AuctionDatum{..}) <- case mbX of
-    --     Nothing -> do
-    --         let e = "anchor not found" 
-    --         logError e
-    --         throwError e
-    --     Just x -> pure x
-    -- logInfo @String $ printf "found auction utxo with datum %s" (show d)              
- 
-    -- let t      = auctionedTokenValue adAuction
-    --     r      = Redeemer $ PlutusTx.toBuiltinData Close
-    --     seller = aSeller adAuction
-
-    --     lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
-    --               Constraints.otherScript auctionValidator                <>
-    --               Constraints.unspentOutputs (Map.singleton oref o)
-
-    --     tx      = case adHighestBid of
-    --                 Nothing      -> Constraints.mustPayToPubKey (unSeller seller) (t <> Ada.lovelaceValueOf minLovelace)  <>
-    --                                 Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
-    --                                 Constraints.mustSpendScriptOutput oref r
-
-    --                 Just Bid{..} -> Constraints.mustPayToPubKey bBidder (t <> Ada.lovelaceValueOf minLovelace) <>
-    --                                 Constraints.mustPayToPubKey (unSeller seller) (Ada.lovelaceValueOf bBid)              <>
-    --                                 Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
-    --                                 Constraints.mustSpendScriptOutput oref r
-
-    -- ledgerTx <- submitTxConstraintsWith lookups tx
-    -- void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
-
-    -- logInfo @String $ printf "closed auction %s" $ show adAuction
-
-
 close :: AuctionParams -> Contract w AuctionSchema T.Text ()
 cose params = mapErrorSM $ runStep (auctionClient params) Close
