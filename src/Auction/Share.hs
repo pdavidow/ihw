@@ -5,15 +5,21 @@ module Auction.Share
     ( auctionDatum
     , auctionedTokenValue
     , minLovelace
+    , notNull
     ) 
     where
 
-import           Ledger ( Datum(Datum), DatumHash, TxOut, txOutDatum ) 
-import           Ledger.Value as Value ( Value, singleton )
+import           Ledger 
+import           Ledger.Value as Value 
 import qualified PlutusTx
-import           PlutusTx.Prelude ( Integer, Maybe(..), AdditiveSemigroup((+))) 
+import           PlutusTx.Prelude 
 
 import           Auction.Types 
+
+
+{-# INLINABLE notNull #-}
+notNull :: Foldable f => f a -> Bool
+notNull = not . null
 
 
 {-# INLINABLE auctionDatum #-}
@@ -24,8 +30,8 @@ auctionDatum o f = do
     PlutusTx.fromBuiltinData d
 
 
-auctionedTokenValue :: Auction -> Value
-auctionedTokenValue x = Value.singleton (aCurrency x) (aToken x) 1
+auctionedTokenValue :: AssetClass -> Value
+auctionedTokenValue x = Value.assetClassValue x 1
 
 
 minLovelace :: Integer

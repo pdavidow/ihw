@@ -38,9 +38,9 @@ library
                      , data-default
                      , deepseq
                      , dlist       
-                     , either            
+                     , either     
+                     , extra       
                      , freer-extras
-                     , ghc
                      , lens
                      , nonempty-containers
                      , playground-common

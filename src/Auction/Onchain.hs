@@ -15,9 +15,11 @@ module Auction.Onchain
     )    
     where
 
-import           GHC.Utils.Misc
+import           Data.Either.Extra hiding (isRight)
+-- import           Data.Foldable.Extra -- todo: does not find notNull, so re-implemented locally
 import           Ledger
 import           Ledger.Ada as Ada ( lovelaceValueOf )
+import           Ledger.Constraints as Constraints
 import qualified Ledger.Typed.Scripts as Scripts  
 import           Plutus.Contract.StateMachine
 import qualified PlutusTx
@@ -54,7 +56,7 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
     
     (v, InProgress h bidders, Register pkh)  
         |  not (isSeller pkh) 
-        && eiReg isRight 
+        && isRight eiReg  
         -> Just (constraints, newState)
             where 
                 eiReg = validateRegisteree bidders pkh
@@ -111,6 +113,10 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
                 newState = State Finished mempty  
 
     _ -> Nothing
+
+    where
+        isSeller :: PubKeyHash -> Bool
+        isSeller pkh = unSeller apSeller == pkh                
 
 
 {-# INLINABLE mkAuctionValidator #-}
