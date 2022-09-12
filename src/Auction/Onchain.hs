@@ -50,7 +50,7 @@ auctionDatum o f = do
 -- todo: throw errors? https://discord.com/channels/826816523368005654/826829805387120690/1018619653335023767
 {-# INLINABLE transition #-}
 transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
-transition AuctionParams{..} s r = case (stateValue s, stateData s, r) of 
+transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of 
     
     (v, InProgress h bidders, Register pkh)  
         |  (not $ isSeller pkh) 
@@ -77,19 +77,21 @@ transition AuctionParams{..} s r = case (stateValue s, stateData s, r) of
                     <> Constraints.mustValidateIn (to apDeadline)       
                 newState = State (InProgress h bidders') v   
 
-    (v, InProgress h bidders, MkBid (Bid pkh n)) ->
-        |  (n >= minBid $ stateData s) 
+    (v, InProgress h bidders, MkBid (Bid pkh n)) 
+        |  (n >= minBid stateData) 
         && (isBidderApproved bidders pkh) 
-        && (notNull approvals) 
         -> Just (constraints, newState)
             where 
-                v' =
+                v' = auctionedTokenValue apAsset <> Ada.lovelaceValueOf (minLovelace + n)
+                payBackPrev = \x -> Constraints.mustPayToPubKey (bBidder x) (Ada.lovelaceValueOf $ x bid)
                 constraints 
                     =  Constraints.mustBeSignedBy pkh  
-                    <> Constraints.mustValidateIn (to apDeadline)      
+                    <> Constraints.mustValidateIn (to apDeadline)  
+                    <> maybe mempty payBackPrev h
                 newState = State (InProgress h bidders) v'   
 
     (v, AuctionDatum auction mbHighestBid, Close) ->
+
     _ -> Nothing
 
 {-# INLINABLE mkAuctionValidator #-}
