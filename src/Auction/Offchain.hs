@@ -35,13 +35,13 @@ import           Auction.Types
 
 type AuctionSchema =
         Endpoint "start"    StartParams
-    .\/ Endpoint "bid"      AuctionParams
+    .\/ Endpoint "bid"      (AuctionParams, Integer)
     .\/ Endpoint "close"    AuctionParams
     .\/ Endpoint "register" AuctionParams
-    .\/ Endpoint "approve"  AuctionParams
+    .\/ Endpoint "approve"  (AuctionParams, [PubKeyHash])
 
 
-endpoints :: Contract (Last ThreadToken) AuctionSchema T.Text ()
+endpoints :: Contract (Last AuctionParams) AuctionSchema T.Text ()
 endpoints = awaitPromise 
     ( start'    `select` 
       bid'      `select` 
@@ -91,14 +91,14 @@ register params = do
     void $ mapErrorSM $ runStep (auctionClient params) $ Register self
 
 
-approve :: AuctionParams -> [PubKeyHash]  -> Contract w AuctionSchema T.Text ()
-approve params pkhs = do
+approve :: (AuctionParams, [PubKeyHash]) -> Contract w AuctionSchema T.Text ()
+approve (params, pkhs) = do
     self <- ownPubKeyHash
     void $ mapErrorSM $ runStep (auctionClient params) $ Approve self pkhs
 
 
-bid :: AuctionParams -> Integer -> Contract w AuctionSchema T.Text ()
-bid params n = do 
+bid :: (AuctionParams, Integer )-> Contract w AuctionSchema T.Text ()
+bid (params, n) = do 
     self <- ownPubKeyHash
     void $ mapErrorSM $ runStep (auctionClient params) $ MkBid $ Bid self n
 
