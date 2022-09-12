@@ -11,10 +11,5 @@ Your submission should run in the Plutus playground.
 Create repo with similar functionality.  Use unit tests, not playground.
 
 
-## NOTES
-0) Using plutus-apps tag `plutus-starter-devcontainer/v1.0.14`
-1) See branch `week01-anchorPlusToken` for starting point.
-
-
 ## USAGE
 `cabal run spectests`

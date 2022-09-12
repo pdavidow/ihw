@@ -121,8 +121,8 @@ approve params pkhs = do
     void $ mapErrorSM $ runStep (auctionClient params) $ Approve self pkhs
 
 
-bid :: BidParams -> Contract w AuctionSchema T.Text ()
-bid BidParams{..} = do 
+bid' :: BidParams -> Contract w AuctionSchema T.Text ()
+bid' BidParams{..} = do 
     -- mbX <- findViaAnchor bpAnchor
     -- (oref, o, d@AuctionDatum{..}) <- case mbX of
     --     Nothing -> throwError "anchor not found" 
@@ -157,6 +157,12 @@ bid BidParams{..} = do
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
 
     logInfo @String $ printf "made bid of %d lovelace in auction %s" bpBid (show adAuction)
+
+
+bid :: AuctionParams -> Integer -> Contract w AuctionSchema T.Text ()
+bid params n = do 
+    self <- ownPubKeyHash
+    void $ mapErrorSM $ runStep (auctionClient params) $ MkBid $ Bid self n
 
 
 close :: Contract w AuctionSchema T.Text ()

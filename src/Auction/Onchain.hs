@@ -50,7 +50,7 @@ auctionDatum o f = do
 -- todo: throw errors? https://discord.com/channels/826816523368005654/826829805387120690/1018619653335023767
 {-# INLINABLE transition #-}
 transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
-transition params s r = case (stateValue s, stateData s, r) of 
+transition AuctionParams{..} s r = case (stateValue s, stateData s, r) of 
     
     (v, InProgress h bidders, Register pkh)  
         |  (not $ isSeller pkh) 
@@ -59,7 +59,9 @@ transition params s r = case (stateValue s, stateData s, r) of
             where 
                 eiReg = validateRegisteree bidders pkh
                 bidders' = registerBidder bidders $ fromRight' eiReg -- partial is safe
-                constraints = Constraints.mustBeSignedBy pkh             
+                constraints 
+                    =  Constraints.mustBeSignedBy pkh     
+                    <> Constraints.mustValidateIn (to apDeadline)          
                 newState = State (InProgress h bidders') v            
 
     (v, InProgress h bidders, Approve approver approvees)  
@@ -70,12 +72,22 @@ transition params s r = case (stateValue s, stateData s, r) of
             where 
                 (approvals, _, _) = validateApprovees bidders approvees
                 bidders' = approveBidders bidders approvals
-                constraints = Constraints.mustBeSignedBy approver  
+                constraints 
+                    =  Constraints.mustBeSignedBy approver  
+                    <> Constraints.mustValidateIn (to apDeadline)       
                 newState = State (InProgress h bidders') v   
 
-
-    (v, InProgress h bidders, MkBid bid) ->
-
+    (v, InProgress h bidders, MkBid (Bid pkh n)) ->
+        |  (n >= minBid $ stateData s) 
+        && (isBidderApproved bidders pkh) 
+        && (notNull approvals) 
+        -> Just (constraints, newState)
+            where 
+                v' =
+                constraints 
+                    =  Constraints.mustBeSignedBy pkh  
+                    <> Constraints.mustValidateIn (to apDeadline)      
+                newState = State (InProgress h bidders) v'   
 
     (v, AuctionDatum auction mbHighestBid, Close) ->
     _ -> Nothing
