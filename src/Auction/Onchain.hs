@@ -50,35 +50,24 @@ auctionDatum o f = do
 {-# INLINABLE transition #-}
 transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
 transition params s r = case (stateValue s, stateData s, r) of 
+    (v, InProgress h bidders, Register pkh)  
+        |  (not $ isSeller pkh) 
+        && (eiReg isRight) 
+        -> Just (constraints, newState)
+            where 
+            eiReg = validateRegisteree bidders pkh
+            bidders' = registerBidder bidders $ fromRight' eiReg -- partial is safe
+            constraints = Constraints.mustBeSignedBy pkh             
+            newState = State (InProgress h bidders') v            
 
--- traceIfFalse "wrong input value" correctInputValue &&
-    -- case redeemer of
-    --     Register reg ->
-    --         traceIfFalse "registeree is seller" (not $ isSeller pkhR) &&
-    --         traceIfFalse "registeree already registered or approved" (not $ isAtLeastRegistered (aBidders auction) pkhR) &&
-    --         traceIfFalse "wrong register output datum" (correctRegisterOutputDatum reg) &&
-    --         traceIfFalse "wrong register output value" correctBidderStatusOutputValue        
-    --         where pkhR = pkhForRegistration reg
-
-    (v, InProgress h bidders, Register pkh) 
-        --   (not $ isBidderRegistered bidders pkh) && 
-        --   (not $ isBidderApproved bidders pkh)    
-        | (not $ isSeller pkh) && (eiReg isRight) ->
-            let 
-                constraints =
-                    Constraints.mustBeSignedBy pkh 
-
-                newState =
-                    State
-                        { stateData = InProgress h $ registerBidder bidders $ fromRight' eiReg 
-                        , stateValue = v
-                        }
-            in 
-                Just (constraints, newState)
-
-        where eiReg = validateRegisteree bidders pkh
-
-
+    (v, InProgress h bidders, Approve approver approvees)  
+        |  (isSeller approver) 
+        && (notNull approvees) 
+        && (notNull approvals) 
+        -> Just (constraints, newState)
+            where 
+            (approvals, _, _) = validateApprovees bidders approvees
+            bidders' = approveBidders bidders approvals
 
 
 

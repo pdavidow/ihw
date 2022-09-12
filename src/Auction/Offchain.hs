@@ -111,8 +111,8 @@ start StartParams{..} = do
  
 register :: AuctionParams -> Contract w AuctionSchema T.Text ()
 register params = do
-    pkh <- ownPubKeyHash
-    void $ mapErrorSM $ runStep (auctionClient params) $ Register pkh
+    self <- ownPubKeyHash
+    void $ mapErrorSM $ runStep (auctionClient params) $ Register self
 
 
 approve' :: ApproveParams -> Contract w AuctionSchema T.Text ()
@@ -152,9 +152,9 @@ approve' ApproveParams{..} = do
 
 
 approve :: AuctionParams -> [PubKeyHash]  -> Contract w AuctionSchema T.Text ()
-approve params xs = do
-    pkh <- ownPubKeyHash
-    void $ mapErrorSM $ runStep (auctionClient params) $ Approve pkh xs
+approve params pkhs = do
+    self <- ownPubKeyHash
+    void $ mapErrorSM $ runStep (auctionClient params) $ Approve self pkhs
 
 
 bid :: BidParams -> Contract w AuctionSchema T.Text ()
