@@ -53,8 +53,8 @@ transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (T
 transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of 
     
     (v, InProgress h bidders, Register pkh)  
-        |  (not $ isSeller pkh) 
-        && (eiReg isRight) 
+        |  not (isSeller pkh) 
+        && eiReg isRight 
         -> Just (constraints, newState)
             where 
                 eiReg = validateRegisteree bidders pkh
@@ -65,9 +65,9 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
                 newState = State (InProgress h bidders') v            
 
     (v, InProgress h bidders, Approve approver approvees)  
-        |  (isSeller approver) 
-        && (notNull approvees) 
-        && (notNull approvals) 
+        |  isSeller approver
+        && notNull approvees
+        && notNull approvals
         -> Just (constraints, newState)
             where 
                 (approvals, _, _) = validateApprovees bidders approvees
@@ -79,7 +79,7 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
 
     (v, InProgress h bidders, MkBid (Bid pkh n)) 
         |  (n >= minBid stateData) 
-        && (isBidderApproved bidders pkh) 
+        && isBidderApproved bidders pkh
         -> Just (constraints, newState)
             where 
                 v' = auctionedTokenValue apAsset <> Ada.lovelaceValueOf (minLovelace + n)
@@ -90,9 +90,18 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
                     <> maybe mempty payBackPrev h
                 newState = State (InProgress h bidders) v'   
 
-    (v, AuctionDatum auction mbHighestBid, Close) ->
+    (v, InProgress h bidders, Close) 
+        -> Just (constraints, newState)
+            where 
+                v' = auctionedTokenValue apAsset <> Ada.lovelaceValueOf (minLovelace + n)
+                payBackPrev = \x -> Constraints.mustPayToPubKey (bBidder x) (Ada.lovelaceValueOf $ x bid)
+                constraints 
+                    =  Constraints.mustValidateIn (to apDeadline)  
+                    <> maybe mempty payBackPrev h
+                newState = State Finished v'  
 
     _ -> Nothing
+
 
 {-# INLINABLE mkAuctionValidator #-}
 mkAuctionValidator :: AuctionParams -> AuctionDatum -> AuctionRedeemer -> ScriptContext -> Bool

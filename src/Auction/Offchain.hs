@@ -121,52 +121,14 @@ approve params pkhs = do
     void $ mapErrorSM $ runStep (auctionClient params) $ Approve self pkhs
 
 
-bid' :: BidParams -> Contract w AuctionSchema T.Text ()
-bid' BidParams{..} = do 
-    -- mbX <- findViaAnchor bpAnchor
-    -- (oref, o, d@AuctionDatum{..}) <- case mbX of
-    --     Nothing -> throwError "anchor not found" 
-    --     Just x -> pure x
-    -- logInfo @String $ printf "found auction utxo with datum %s" $ show d        
-
-    when (bpBid < minBid d) $ throwError $ T.pack $ printf "bid lower than minimal bid %d" $ minBid d
-  
-    pkh <- ownPubKeyHash
-    unless (isBidderApproved (aBidders adAuction) pkh) $ throwError $ T.pack $ printf "bidder not approved %s" $ show pkh
- 
-    let b  = Bid {bBidder = pkh, bBid = bpBid}
-        d' = d {adHighestBid = Just b}
-        v  = auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + bpBid)
-        r  = Redeemer $ PlutusTx.toBuiltinData $ MkBid b
-
-        lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
-                  Constraints.otherScript auctionValidator                <>
-                  Constraints.unspentOutputs (Map.singleton oref o)
-
-        tx      = case adHighestBid of
-                    Nothing      -> Constraints.mustPayToTheScript d' v                            <>
-                                    Constraints.mustValidateIn (to $ aDeadline adAuction)          <>
-                                    Constraints.mustSpendScriptOutput oref r
-
-                    Just Bid{..} -> Constraints.mustPayToTheScript d' v                            <>
-                                    Constraints.mustPayToPubKey bBidder (Ada.lovelaceValueOf bBid) <>
-                                    Constraints.mustValidateIn (to $ aDeadline adAuction)          <>
-                                    Constraints.mustSpendScriptOutput oref r
-
-    ledgerTx <- submitTxConstraintsWith lookups tx
-    void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
-
-    logInfo @String $ printf "made bid of %d lovelace in auction %s" bpBid (show adAuction)
-
-
 bid :: AuctionParams -> Integer -> Contract w AuctionSchema T.Text ()
 bid params n = do 
     self <- ownPubKeyHash
     void $ mapErrorSM $ runStep (auctionClient params) $ MkBid $ Bid self n
 
 
-close :: Contract w AuctionSchema T.Text ()
-close = do       
+-- close' :: Contract w AuctionSchema T.Text ()
+-- close' = do       
     -- mbX <- findViaAnchor cpAnchor
     -- (oref, o, d@AuctionDatum{..}) <- case mbX of
     --     Nothing -> do
@@ -176,26 +138,29 @@ close = do
     --     Just x -> pure x
     -- logInfo @String $ printf "found auction utxo with datum %s" (show d)              
  
-    let t      = auctionedTokenValue adAuction
-        r      = Redeemer $ PlutusTx.toBuiltinData Close
-        seller = aSeller adAuction
+    -- let t      = auctionedTokenValue adAuction
+    --     r      = Redeemer $ PlutusTx.toBuiltinData Close
+    --     seller = aSeller adAuction
 
-        lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
-                  Constraints.otherScript auctionValidator                <>
-                  Constraints.unspentOutputs (Map.singleton oref o)
+    --     lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
+    --               Constraints.otherScript auctionValidator                <>
+    --               Constraints.unspentOutputs (Map.singleton oref o)
 
-        tx      = case adHighestBid of
-                    Nothing      -> Constraints.mustPayToPubKey (unSeller seller) (t <> Ada.lovelaceValueOf minLovelace)  <>
-                                    Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
-                                    Constraints.mustSpendScriptOutput oref r
+    --     tx      = case adHighestBid of
+    --                 Nothing      -> Constraints.mustPayToPubKey (unSeller seller) (t <> Ada.lovelaceValueOf minLovelace)  <>
+    --                                 Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
+    --                                 Constraints.mustSpendScriptOutput oref r
 
-                    Just Bid{..} -> Constraints.mustPayToPubKey bBidder (t <> Ada.lovelaceValueOf minLovelace) <>
-                                    Constraints.mustPayToPubKey (unSeller seller) (Ada.lovelaceValueOf bBid)              <>
-                                    Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
-                                    Constraints.mustSpendScriptOutput oref r
+    --                 Just Bid{..} -> Constraints.mustPayToPubKey bBidder (t <> Ada.lovelaceValueOf minLovelace) <>
+    --                                 Constraints.mustPayToPubKey (unSeller seller) (Ada.lovelaceValueOf bBid)              <>
+    --                                 Constraints.mustValidateIn (from $ aDeadline adAuction)                    <>
+    --                                 Constraints.mustSpendScriptOutput oref r
 
-    ledgerTx <- submitTxConstraintsWith lookups tx
-    void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
+    -- ledgerTx <- submitTxConstraintsWith lookups tx
+    -- void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
 
-    logInfo @String $ printf "closed auction %s" $ show adAuction
+    -- logInfo @String $ printf "closed auction %s" $ show adAuction
 
+
+close :: AuctionParams -> Contract w AuctionSchema T.Text ()
+cose params = mapErrorSM $ runStep (auctionClient params) Close

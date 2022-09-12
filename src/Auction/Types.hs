@@ -11,7 +11,6 @@ module Auction.Types
     ( AuctionRedeemer(..)
     , AuctionDatum(..)
     , Bid(..)
-    , BidParams(..)
     , Seller(..)
     , StartParams(..)
     ) 
@@ -99,8 +98,3 @@ data StartParams = StartParams
     , spAsset :: !AssetClass  
     } deriving (Generic, ToJSON, FromJSON, ToSchema)
  
-
----------------------
-data BidParams = BidParams
-    { bpBid    :: !Integer
-    } deriving (Generic, ToJSON, FromJSON, ToSchema)
