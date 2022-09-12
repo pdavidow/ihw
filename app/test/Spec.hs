@@ -4,7 +4,7 @@ module Main
 
 import Test.Tasty ( defaultMain, testGroup, TestTree )
 
-import qualified Spec.Auction.Unit
+-- import qualified Spec.Auction.Unit
 -- import qualified Spec.Auction.Trace
 
 
@@ -17,6 +17,6 @@ main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "all tests"
-    [ Spec.Auction.Unit.tests  
+    [ --Spec.Auction.Unit.tests  
     ]
 

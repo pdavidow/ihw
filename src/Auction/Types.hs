@@ -61,6 +61,8 @@ data AuctionParams = AuctionParams
     , apAnchor :: !ThreadToken    
     } deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON)
 
+
+PlutusTx.unstableMakeIsData ''AuctionParams
 PlutusTx.makeLift ''AuctionParams
 
 ---------------------
@@ -90,6 +92,7 @@ data AuctionRedeemer
     deriving P.Show
 
 PlutusTx.unstableMakeIsData ''AuctionRedeemer
+PlutusTx.makeLift ''AuctionRedeemer
 
 ---------------------
 data StartParams = StartParams

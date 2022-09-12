@@ -67,8 +67,8 @@ test-suite spectests
   type:                exitcode-stdio-1.0
   main-is:             Spec.hs
   hs-source-dirs:      app/test
-  other-modules:       Spec.Auction.Unit
-                       , Spec.Auction.Trace
+  -- other-modules:       Spec.Auction.Unit
+  --                      , Spec.Auction.Trace
  
 
   default-language:    Haskell2010
