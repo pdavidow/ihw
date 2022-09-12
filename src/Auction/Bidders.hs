@@ -18,7 +18,6 @@ module Auction.Bidders
     , isAnyApprovals
     , isBidderApproved
     , isAllRegisterd
-    , isAtLeastRegistered
     , isBidderRegistered
     , registerBidder
     , mapFrom
@@ -90,10 +89,12 @@ newtype NotRegistereds = NotRegistereds [PubKeyHash]
     deriving P.Show
 
 
+{-# INLINABLE mkBidders #-}
 mkBidders :: Bidders
 mkBidders = Bidders AssocMap.empty
 
 
+{-# INLINABLE mapFrom #-}
 mapFrom :: Bidders -> BiddersMap
 mapFrom (Bidders x) = x
 
@@ -123,22 +124,22 @@ isBidderApproved :: Bidders -> PubKeyHash -> Bool
 isBidderApproved b pkh = Just Approved == AssocMap.lookup pkh (mapFrom b)
 
 
+{-# INLINABLE isAllRegisterd #-}
 isAllRegisterd :: Bidders -> [PubKeyHash] -> Bool 
 isAllRegisterd = all . isBidderRegistered 
 
 
-isAtLeastRegistered :: Bidders -> PubKeyHash -> Bool      
-isAtLeastRegistered b pkh = AssocMap.member pkh (mapFrom b)
-
-
+{-# INLINABLE registerBidder #-}
 registerBidder :: Bidders -> Registration -> Bidders
 registerBidder b x = Bidders $ AssocMap.insert (pkhForRegistration x) Registered (mapFrom b)
 
 
+{-# INLINABLE approveBidders #-}
 approveBidders :: Bidders -> Approvals -> Bidders
 approveBidders b x = Bidders $ foldr (`AssocMap.insert` Approved) (mapFrom b) $ pkhsForApprovals x
 
 
+{-# INLINABLE validateRegisteree #-}
 validateRegisteree :: Bidders -> PubKeyHash -> Either T.Text Registration
 validateRegisteree b x
   | isBidderRegistered b x = Left "already registered"
@@ -146,6 +147,7 @@ validateRegisteree b x
   | otherwise = Right $ Registration x
 
 
+{-# INLINABLE validateApprovees #-}
 validateApprovees :: Bidders -> [PubKeyHash] -> (Approvals, AlreadyApproveds, NotRegistereds)
 validateApprovees b = foldr f (Approvals [], AlreadyApproveds [], NotRegistereds [])
     where f = \ x (Approvals as, AlreadyApproveds bs, NotRegistereds cs) ->

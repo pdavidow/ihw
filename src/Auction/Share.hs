@@ -30,10 +30,12 @@ auctionDatum o f = do
     PlutusTx.fromBuiltinData d
 
 
+{-# INLINABLE auctionedTokenValue #-}
 auctionedTokenValue :: AssetClass -> Value
 auctionedTokenValue x = Value.assetClassValue x 1
 
 
+{-# INLINABLE minLovelace #-}
 minLovelace :: Integer
 minLovelace = 2000000
 
