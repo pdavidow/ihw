@@ -115,42 +115,6 @@ register params = do
     void $ mapErrorSM $ runStep (auctionClient params) $ Register self
 
 
-approve' :: ApproveParams -> Contract w AuctionSchema T.Text ()
-approve' ApproveParams{..} = do
-    when (null appApprovals) $ throwError $ T.pack "list may not be empty" 
-
-    -- mbX <- findViaAnchor apAnchor
-    -- (oref, o, d@AuctionDatum{..}) <- case mbX of
-    --     Nothing -> throwError "anchor not found" 
-    --     Just x -> pure x
-    -- logInfo @String $ printf "found auction utxo with datum %s" $ show d        
-
-    pkh <- ownPubKeyHash
-    unless (pkh == unSeller (aSeller adAuction)) $ throwError $ T.pack $ printf "only seller may approve" 
-
-    let (app, AlreadyApproveds alreadyAs, NotRegistereds notRs) = validateApprovees (aBidders adAuction) apApprovals
-    let pkhsA = pkhsForApprovals app   
-    when (null pkhsA) $ throwError $ T.pack $ printf "none fit for approval %s" $ show apApprovals
-    unless (null notRs) $ logInfo @String $ printf "not registered %s" $ show notRs
-    unless (null alreadyAs) $ logInfo @String $ printf "already approved %s" $ show alreadyAs
-
-    let d' = d {adAuction = adAuction {aBidders = approveBidders (aBidders adAuction) app}}
-        v  = auctionedTokenValue adAuction <> Ada.lovelaceValueOf (minLovelace + maybe 0 bBid adHighestBid)
-        r  = Redeemer $ PlutusTx.toBuiltinData $ Approve pkh app
-
-        lookups = Constraints.typedValidatorLookups typedAuctionValidator <>
-                  Constraints.otherScript auctionValidator                <>
-                  Constraints.unspentOutputs (Map.singleton oref o)
-
-        tx      = Constraints.mustPayToTheScript d' v                     <>
-                  Constraints.mustSpendScriptOutput oref r
-
-    ledgerTx <- submitTxConstraintsWith lookups tx
-    void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
-
-    logInfo @String $ printf "approved bidders %s" $ show pkhsA
-
-
 approve :: AuctionParams -> [PubKeyHash]  -> Contract w AuctionSchema T.Text ()
 approve params pkhs = do
     self <- ownPubKeyHash

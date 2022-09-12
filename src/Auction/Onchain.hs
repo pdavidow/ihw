@@ -15,6 +15,7 @@ module Auction.Onchain
     )    
     where
 
+import           GHC.Utils.Misc
 import           Ledger
 import           Ledger.Ada as Ada ( lovelaceValueOf )
 import qualified Ledger.Typed.Scripts as Scripts  
@@ -68,11 +69,12 @@ transition params s r = case (stateValue s, stateData s, r) of
             where 
             (approvals, _, _) = validateApprovees bidders approvees
             bidders' = approveBidders bidders approvals
+            constraints = Constraints.mustBeSignedBy approver  
+            newState = State (InProgress h bidders') v   
 
 
-
-    (v, AuctionDatum auction _, Approve approverPkh, approvals) ->
     (v, AuctionDatum auction mbHighestBid, MkBid bid) ->
+        
     (v, AuctionDatum auction mbHighestBid, Close) ->
     _ -> Nothing
 

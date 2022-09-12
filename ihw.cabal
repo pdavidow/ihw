@@ -40,6 +40,7 @@ library
                      , dlist       
                      , either            
                      , freer-extras
+                     , ghc
                      , lens
                      , nonempty-containers
                      , playground-common
