@@ -51,15 +51,16 @@ auctionDatum o f = do
 {-# INLINABLE transition #-}
 transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
 transition params s r = case (stateValue s, stateData s, r) of 
+    
     (v, InProgress h bidders, Register pkh)  
         |  (not $ isSeller pkh) 
         && (eiReg isRight) 
         -> Just (constraints, newState)
             where 
-            eiReg = validateRegisteree bidders pkh
-            bidders' = registerBidder bidders $ fromRight' eiReg -- partial is safe
-            constraints = Constraints.mustBeSignedBy pkh             
-            newState = State (InProgress h bidders') v            
+                eiReg = validateRegisteree bidders pkh
+                bidders' = registerBidder bidders $ fromRight' eiReg -- partial is safe
+                constraints = Constraints.mustBeSignedBy pkh             
+                newState = State (InProgress h bidders') v            
 
     (v, InProgress h bidders, Approve approver approvees)  
         |  (isSeller approver) 
@@ -67,14 +68,15 @@ transition params s r = case (stateValue s, stateData s, r) of
         && (notNull approvals) 
         -> Just (constraints, newState)
             where 
-            (approvals, _, _) = validateApprovees bidders approvees
-            bidders' = approveBidders bidders approvals
-            constraints = Constraints.mustBeSignedBy approver  
-            newState = State (InProgress h bidders') v   
+                (approvals, _, _) = validateApprovees bidders approvees
+                bidders' = approveBidders bidders approvals
+                constraints = Constraints.mustBeSignedBy approver  
+                newState = State (InProgress h bidders') v   
 
 
-    (v, AuctionDatum auction mbHighestBid, MkBid bid) ->
-        
+    (v, InProgress h bidders, MkBid bid) ->
+
+
     (v, AuctionDatum auction mbHighestBid, Close) ->
     _ -> Nothing
 
