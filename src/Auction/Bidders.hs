@@ -29,7 +29,6 @@ module Auction.Bidders
     where
 
 import           Data.Aeson (FromJSON, ToJSON)
-import qualified Data.Text as T
 import           GHC.Generics (Generic)
 import           Ledger ( PubKeyHash ) 
 import qualified PlutusTx
@@ -137,14 +136,6 @@ registerBidder b x = Bidders $ AssocMap.insert (pkhForRegistration x) Registered
 {-# INLINABLE approveBidders #-}
 approveBidders :: Bidders -> Approvals -> Bidders
 approveBidders b x = Bidders $ foldr (`AssocMap.insert` Approved) (mapFrom b) $ pkhsForApprovals x
-
-
--- {-# INLINABLE validateRegisteree #-}
--- validateRegisteree :: Bidders -> PubKeyHash -> Either T.Text Registration
--- validateRegisteree b x
---   | isBidderRegistered b x = Left "already registered"
---   | isBidderApproved b x = Left "already approved"
---   | otherwise = Right $ Registration x
 
 
 {-# INLINABLE validateRegisteree #-}

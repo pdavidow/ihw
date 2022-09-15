@@ -4,6 +4,7 @@
 module Auction.Share
     ( auctionDatum
     , auctionedTokenValue
+    , isSeller
     , minLovelace
     , notNull
     ) 
@@ -40,3 +41,5 @@ minLovelace :: Integer
 minLovelace = 2000000
 
 
+isSeller :: PubKeyHash -> Seller -> Bool
+isSeller pkh x = unSeller x == pkh   

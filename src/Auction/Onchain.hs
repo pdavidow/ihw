@@ -48,25 +48,12 @@ auctionDatum o f = do
     PlutusTx.fromBuiltinData d
 
 
--- todo: throw errors? https://discord.com/channels/826816523368005654/826829805387120690/1018619653335023767
 {-# INLINABLE transition #-}
 transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
-transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of 
-    
-    -- (v, InProgress h bidders, Register pkh)  
-    --     |  not (isSeller pkh) 
-    --     && isJust mbReg  
-    --     -> Just (constraints, newState)
-    --         where 
-    --             mbReg = validateRegisteree bidders pkh
-    --             bidders' = registerBidder bidders $ fromJust mbReg -- partial is safe
-    --             constraints 
-    --                 =  Constraints.mustBeSignedBy pkh     
-    --                 <> Constraints.mustValidateIn (to apDeadline)          
-    --             newState = State (InProgress h bidders') v            
+transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of          
 
     (v, InProgress h bidders, Register pkh)  
-        |  not (isSeller pkh) 
+        |  not (isSeller pkh apSeller) 
         -> case validateRegisteree bidders pkh of
             Nothing -> Nothing 
             Just reg -> 
@@ -79,9 +66,8 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
                 in
                     Just (constraints, newState)
 
-
     (v, InProgress h bidders, Approve approver approvees)  
-        |  isSeller approver
+        |  isSeller approver apSeller
         && notNull approvees
         && isAnyApprovals approvals
         -> Just (constraints, newState)
@@ -126,11 +112,7 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
 
                 newState = State Finished mempty  
 
-    _ -> Nothing
-
-    where
-        isSeller :: PubKeyHash -> Bool
-        isSeller pkh = unSeller apSeller == pkh                
+    _ -> Nothing             
 
 
 {-# INLINABLE mkAuctionValidator #-}
