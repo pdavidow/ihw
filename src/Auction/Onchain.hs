@@ -53,17 +53,32 @@ auctionDatum o f = do
 transition :: AuctionParams -> State AuctionDatum -> AuctionRedeemer -> Maybe (TxConstraints Void Void, State AuctionDatum)
 transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of 
     
+    -- (v, InProgress h bidders, Register pkh)  
+    --     |  not (isSeller pkh) 
+    --     && isJust mbReg  
+    --     -> Just (constraints, newState)
+    --         where 
+    --             mbReg = validateRegisteree bidders pkh
+    --             bidders' = registerBidder bidders $ fromJust mbReg -- partial is safe
+    --             constraints 
+    --                 =  Constraints.mustBeSignedBy pkh     
+    --                 <> Constraints.mustValidateIn (to apDeadline)          
+    --             newState = State (InProgress h bidders') v            
+
     (v, InProgress h bidders, Register pkh)  
         |  not (isSeller pkh) 
-        && isRight eiReg  
-        -> Just (constraints, newState)
-            where 
-                eiReg = validateRegisteree bidders pkh
-                bidders' = registerBidder bidders $ fromRight' eiReg -- partial is safe
-                constraints 
-                    =  Constraints.mustBeSignedBy pkh     
-                    <> Constraints.mustValidateIn (to apDeadline)          
-                newState = State (InProgress h bidders') v            
+        -> case validateRegisteree bidders pkh of
+            Nothing -> Nothing 
+            Just reg -> 
+                let 
+                    bidders' = registerBidder bidders reg 
+                    constraints 
+                        =  Constraints.mustBeSignedBy pkh     
+                        <> Constraints.mustValidateIn (to apDeadline)          
+                    newState = State (InProgress h bidders') v    
+                in
+                    Just (constraints, newState)
+
 
     (v, InProgress h bidders, Approve approver approvees)  
         |  isSeller approver

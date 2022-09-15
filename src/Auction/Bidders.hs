@@ -139,12 +139,20 @@ approveBidders :: Bidders -> Approvals -> Bidders
 approveBidders b x = Bidders $ foldr (`AssocMap.insert` Approved) (mapFrom b) $ pkhsForApprovals x
 
 
+-- {-# INLINABLE validateRegisteree #-}
+-- validateRegisteree :: Bidders -> PubKeyHash -> Either T.Text Registration
+-- validateRegisteree b x
+--   | isBidderRegistered b x = Left "already registered"
+--   | isBidderApproved b x = Left "already approved"
+--   | otherwise = Right $ Registration x
+
+
 {-# INLINABLE validateRegisteree #-}
-validateRegisteree :: Bidders -> PubKeyHash -> Either T.Text Registration
+validateRegisteree :: Bidders -> PubKeyHash -> Maybe Registration
 validateRegisteree b x
-  | isBidderRegistered b x = Left "already registered"
-  | isBidderApproved b x = Left "already approved"
-  | otherwise = Right $ Registration x
+  | isBidderRegistered b x = Nothing 
+  | isBidderApproved b x = Nothing 
+  | otherwise = Just $ Registration x  
 
 
 {-# INLINABLE validateApprovees #-}
