@@ -21,5 +21,4 @@ cabal.project.local
 cabal.project.local~
 .HTF/
 .ghc.environment.*
-app/test/Spec/Auction/Unit.hs
 .DS_Store
