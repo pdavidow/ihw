@@ -97,6 +97,8 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
         -> Just (constraints, newState)
             where 
                 seller = unSeller apSeller
+
+                -- todo what then is v?
                 val = auctionedTokenValue apAsset <> Ada.lovelaceValueOf minLovelace
 
                 constraints 
