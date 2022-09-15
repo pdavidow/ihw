@@ -41,16 +41,15 @@ PlutusTx.makeLift ''Seller
 data Bid = Bid
     { bBidder :: !PubKeyHash
     , bBid    :: !Integer
-    } deriving P.Show
+    } deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON, ToSchema)
 
 instance Eq Bid where
     {-# INLINABLE (==) #-}
-    b == c = (bBidder b == bBidder c) &&
-             (bBid    b == bBid    c)
+    x == y = (bBidder x == bBidder y) &&
+             (bBid    x == bBid    y)
 
 PlutusTx.unstableMakeIsData ''Bid
 PlutusTx.makeLift ''Bid
-
 
 ---------------------
 data AuctionParams = AuctionParams
@@ -59,8 +58,7 @@ data AuctionParams = AuctionParams
     , apMinBid :: !Integer -- todo Nat-ish
     , apAsset :: !AssetClass
     , apAnchor :: !ThreadToken    
-    } deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON)
-
+    } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
 
 PlutusTx.unstableMakeIsData ''AuctionParams
 PlutusTx.makeLift ''AuctionParams
@@ -72,7 +70,7 @@ data AuctionDatum
         , adBidders :: !Bidders
         } 
     | Finished
-        deriving P.Show
+        deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON)
 
 PlutusTx.unstableMakeIsData ''AuctionDatum
 PlutusTx.makeLift ''AuctionDatum
@@ -89,7 +87,7 @@ data AuctionRedeemer
     | Approve !PubKeyHash ![PubKeyHash]
     | MkBid !Bid 
     | Close 
-    deriving P.Show
+    deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON)
 
 PlutusTx.unstableMakeIsData ''AuctionRedeemer
 PlutusTx.makeLift ''AuctionRedeemer
@@ -99,5 +97,5 @@ data StartParams = StartParams
     { spDeadline :: !POSIXTime
     , spMinBid :: !Integer
     , spAsset :: !AssetClass  
-    } deriving (Generic, ToJSON, FromJSON, ToSchema)
+    } deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON, ToSchema)
  

@@ -39,7 +39,6 @@ import qualified Prelude as P
 import           Schema (ToSchema)
 
 
-
 data Status = Registered | Approved
     deriving stock (P.Eq, P.Show, Generic)
     deriving anyclass (ToJSON, FromJSON, ToSchema)
@@ -50,7 +49,8 @@ instance Eq Status where
     Approved == Approved = True
     _ == _ = False
 
-PlutusTx.makeIsDataIndexed ''Status [('Registered, 0), ('Approved, 1)]
+-- PlutusTx.makeIsDataIndexed ''Status [('Registered, 0), ('Approved, 1)]
+PlutusTx.unstableMakeIsData ''Status
 PlutusTx.makeLift ''Status  
 
 
