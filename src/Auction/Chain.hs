@@ -14,18 +14,47 @@ module Auction.Chain
     )    
     where
 
-
 import           Ledger
+                    ( scriptAddress,
+                    from,
+                    to,
+                    txOutDatum,
+                    Address,
+                    ScriptContext,
+                    Datum(Datum),
+                    DatumHash,
+                    Validator,
+                    TxOut )
 import           Ledger.Ada as Ada ( lovelaceValueOf )
-import           Ledger.Constraints as Constraints
+import           Ledger.Constraints as Constraints ( mustBeSignedBy, mustPayToPubKey, mustValidateIn )
 import qualified Ledger.Typed.Scripts as Scripts  
 import           Plutus.Contract.StateMachine
+                    ( Void,
+                    StateMachineClient,
+                    StateMachine,
+                    mkStateMachineClient,
+                    mkStateMachine,
+                    mkValidator,
+                    State(..),
+                    StateMachineInstance(..),
+                    TxConstraints )
 import qualified PlutusTx
 import           PlutusTx.Prelude
+                    ( Bool(..),
+                    Maybe(..),
+                    AdditiveSemigroup((+)),
+                    Monoid(mempty),
+                    Ord((>=)),
+                    Semigroup((<>)),
+                    ($),
+                    (.),
+                    (&&),
+                    not,
+                    maybe )
 
-import           Auction.Bidders 
-import           Auction.Share 
-import           Auction.Types 
+import           Auction.Bidders ( approveBidders, isAnyApprovals, isBidderApproved, registerBidder, validateApprovees, validateRegisteree ) 
+import           Auction.Share ( auctionedTokenValue, isSeller, minLovelace, notNull ) 
+import           Auction.Types ( Seller(..), Bid(..), AuctionParams(..), AuctionDatum(..), AuctionRedeemer(..) ) 
 
 
 {-# INLINABLE isFinal #-}
