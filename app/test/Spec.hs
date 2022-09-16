@@ -2,21 +2,12 @@ module Main
     ( main
     ) where
 
-import Test.Tasty ( defaultMain, testGroup, TestTree )
+import Test.Tasty ( defaultMain, testGroup )
 
 import qualified Spec.Auction.Unit
--- import qualified Spec.Auction.Trace
 
 
 main :: IO ()
-main = defaultMain tests
-
--- main :: IO ()
--- main = Spec.Auction.Trace.test1
-
-
-tests :: TestTree
-tests = testGroup "all tests"
+main = defaultMain $ testGroup "all tests"
     [ Spec.Auction.Unit.tests  
     ]
-
