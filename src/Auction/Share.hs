@@ -10,12 +10,12 @@ module Auction.Share
     ) 
     where
 
-import           Ledger 
-import           Ledger.Value as Value 
+import           Ledger ( txOutDatum, PubKeyHash, Datum(..), DatumHash, TxOut, AssetClass, Value ) 
+import           Ledger.Value as Value ( assetClassValue ) 
 import qualified PlutusTx
-import           PlutusTx.Prelude 
+import           PlutusTx.Prelude ( Bool, Integer, Maybe, Eq((==)), (.), not, null, Foldable ) 
 
-import           Auction.Types 
+import           Auction.Types ( Seller(..), AuctionDatum ) 
 
 
 {-# INLINABLE notNull #-}
@@ -41,5 +41,6 @@ minLovelace :: Integer
 minLovelace = 2000000
 
 
+{-# INLINABLE isSeller #-}
 isSeller :: PubKeyHash -> Seller -> Bool
 isSeller pkh x = unSeller x == pkh   

@@ -14,8 +14,7 @@ module Auction.Onchain
     )    
     where
 
-import           Data.Either.Extra hiding (isRight)
--- import           Data.Foldable.Extra -- todo: does not find notNull, so re-implemented locally
+
 import           Ledger
 import           Ledger.Ada as Ada ( lovelaceValueOf )
 import           Ledger.Constraints as Constraints
