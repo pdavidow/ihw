@@ -2,33 +2,23 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Auction.Share
-    ( auctionDatum
-    , auctionedTokenValue
+    ( auctionedTokenValue
     , isSeller
     , minLovelace
     , notNull
     ) 
     where
 
-import           Ledger ( txOutDatum, PubKeyHash, Datum(..), DatumHash, TxOut, AssetClass, Value ) 
+import           Ledger ( PubKeyHash, AssetClass, Value ) 
 import           Ledger.Value as Value ( assetClassValue ) 
-import qualified PlutusTx
-import           PlutusTx.Prelude ( Bool, Integer, Maybe, Eq((==)), (.), not, null, Foldable ) 
+import           PlutusTx.Prelude ( Bool, Integer, Eq((==)), (.), not, null, Foldable ) 
 
-import           Auction.Types ( Seller(..), AuctionDatum ) 
+import           Auction.Types ( Seller(..) ) 
 
 
 {-# INLINABLE notNull #-}
 notNull :: Foldable f => f a -> Bool
 notNull = not . null
-
-
-{-# INLINABLE auctionDatum #-}
-auctionDatum :: TxOut -> (DatumHash -> Maybe Datum) -> Maybe AuctionDatum
-auctionDatum o f = do
-    dh <- txOutDatum o
-    Datum d <- f dh
-    PlutusTx.fromBuiltinData d
 
 
 {-# INLINABLE auctionedTokenValue #-}
