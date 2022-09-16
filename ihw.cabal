@@ -22,8 +22,8 @@ common project-config
 
 library
   exposed-modules:   Auction.Bidders 
-                     , Auction.Offchain
-                     , Auction.Onchain
+                     , Auction.Endpoints
+                     , Auction.Chain
                      , Auction.Share         
                      , Auction.Types
 

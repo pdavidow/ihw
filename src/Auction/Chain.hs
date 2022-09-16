@@ -6,7 +6,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Auction.Onchain
+module Auction.Chain
     ( auctionAddress  
     , auctionClient
     , auctionValidator

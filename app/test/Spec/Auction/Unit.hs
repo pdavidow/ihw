@@ -42,7 +42,7 @@ import qualified PlutusTx.Prelude as PlutusTx
 
 import           Test.Tasty ( TestTree, testGroup )
 
-import           Auction.Offchain ( endpoints, AuctionSchema ) 
+import           Auction.Endpoints ( endpoints, AuctionSchema ) 
 import           Auction.Share ( minLovelace )
 import           Auction.Types ( AuctionParams, StartParams(..) ) 
 

@@ -5,7 +5,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Auction.Offchain
+module Auction.Endpoints
     ( AuctionSchema
     , endpoints
     )
@@ -32,7 +32,7 @@ import           Plutus.Contract
 import           Plutus.Contract.StateMachine ( SMContractError, getThreadToken, runInitialise, runStep )
 
 import           Auction.Bidders ( mkBidders ) 
-import           Auction.Onchain ( auctionClient ) 
+import           Auction.Chain ( auctionClient ) 
 import           Auction.Share ( auctionedTokenValue, minLovelace )
 import           Auction.Types ( Seller(..), Bid(..), AuctionParams(..), AuctionDatum(..), AuctionRedeemer(..), StartParams(..) ) 
 
