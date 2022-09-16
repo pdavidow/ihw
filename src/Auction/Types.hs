@@ -33,8 +33,9 @@ import           Auction.Bidders ( Bidders )
 newtype Seller = Seller {unSeller :: PubKeyHash}
     deriving stock (P.Eq, P.Show, Generic)
     deriving anyclass (ToJSON, FromJSON, ToSchema)
-    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+    deriving newtype (Eq)
 
+PlutusTx.makeIsDataIndexed ''Seller [('Seller, 0)]
 PlutusTx.makeLift ''Seller
 
 ---------------------
@@ -48,7 +49,7 @@ instance Eq Bid where
     x == y = (bBidder x == bBidder y) &&
              (bBid    x == bBid    y)
 
-PlutusTx.unstableMakeIsData ''Bid
+PlutusTx.makeIsDataIndexed ''Bid [('Bid, 0)]
 PlutusTx.makeLift ''Bid
 
 ---------------------
@@ -60,7 +61,7 @@ data AuctionParams = AuctionParams
     , apAnchor :: !ThreadToken    
     } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
 
-PlutusTx.unstableMakeIsData ''AuctionParams
+PlutusTx.makeIsDataIndexed ''AuctionParams [('AuctionParams, 0)]
 PlutusTx.makeLift ''AuctionParams
 
 ---------------------
@@ -72,7 +73,7 @@ data AuctionDatum
     | Finished
         deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON)
 
-PlutusTx.unstableMakeIsData ''AuctionDatum
+PlutusTx.makeIsDataIndexed ''AuctionDatum [('InProgress, 0), ('Finished, 1)]
 PlutusTx.makeLift ''AuctionDatum
 
 instance Eq AuctionDatum where
@@ -89,7 +90,7 @@ data AuctionRedeemer
     | Close 
     deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON)
 
-PlutusTx.unstableMakeIsData ''AuctionRedeemer
+PlutusTx.makeIsDataIndexed ''AuctionRedeemer [('Register, 0), ('Approve, 1), ('MkBid,  2), ('Close, 3)]
 PlutusTx.makeLift ''AuctionRedeemer
 
 ---------------------
