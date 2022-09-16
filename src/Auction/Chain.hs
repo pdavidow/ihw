@@ -58,12 +58,11 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
             Just reg -> 
                 let 
                     bidders' = registerBidder bidders reg 
+                    newState = State (InProgress h bidders') v   
 
                     constraints 
                         =  Constraints.mustBeSignedBy pkh     
                         <> Constraints.mustValidateIn (to apDeadline)  
-
-                    newState = State (InProgress h bidders') v    
                 in
                     Just (constraints, newState)
 
@@ -74,40 +73,34 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
         -> Just (constraints, newState)
             where 
                 (approvals, _, _) = validateApprovees bidders approvees
-
                 bidders' = approveBidders bidders approvals
+                newState = State (InProgress h bidders') v                  
 
                 constraints 
                     =  Constraints.mustBeSignedBy approver  
-                    <> Constraints.mustValidateIn (to apDeadline)  
+                    <> Constraints.mustValidateIn (to apDeadline)   
 
-                newState = State (InProgress h bidders') v   
-
-    (v, InProgress h bidders, MkBid b@(Bid pkh n)) 
+    (_, InProgress h bidders, MkBid b@(Bid pkh n)) 
         |  (n >= maybe apMinBid (\x -> bBid x + 1) h) 
         && isBidderApproved bidders pkh
         -> Just (constraints, newState)
             where 
                 h' = Just b 
-
                 v' = auctionedTokenValue apAsset <> Ada.lovelaceValueOf (minLovelace + n)
-
-                payBackPrev = \x -> Constraints.mustPayToPubKey (bBidder x) (Ada.lovelaceValueOf $ bBid x)
+                payBackPrev = \bid -> Constraints.mustPayToPubKey (bBidder bid) (Ada.lovelaceValueOf $ bBid bid)
+                newState = State (InProgress h' bidders) v'   
 
                 constraints 
                     =  Constraints.mustBeSignedBy pkh  
                     <> Constraints.mustValidateIn (to apDeadline)  
                     <> maybe mempty payBackPrev h
 
-                newState = State (InProgress h' bidders) v'   
-
-    (v, InProgress h _, Close) 
+    (_, InProgress h _, Close) 
         -> Just (constraints, newState)
             where 
                 seller = unSeller apSeller
-
-                -- todo what then is v?
                 val = auctionedTokenValue apAsset <> Ada.lovelaceValueOf minLovelace
+                newState = State Finished mempty  
 
                 constraints 
                     =  Constraints.mustValidateIn (from apDeadline)  
@@ -119,8 +112,6 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
                                 -> Constraints.mustPayToPubKey (bBidder x) val 
                                 <> Constraints.mustPayToPubKey seller (Ada.lovelaceValueOf $ bBid x) 
                        )
-
-                newState = State Finished mempty  
 
     _ -> Nothing             
 
