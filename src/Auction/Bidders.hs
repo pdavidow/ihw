@@ -58,8 +58,7 @@ instance Eq Status where
     Approved == Approved = True
     _ == _ = False
 
--- PlutusTx.makeIsDataIndexed ''Status [('Registered, 0), ('Approved, 1)]
-PlutusTx.unstableMakeIsData ''Status
+PlutusTx.makeIsDataIndexed ''Status [('Registered, 0), ('Approved, 1)]
 PlutusTx.makeLift ''Status  
 
 
@@ -77,7 +76,7 @@ PlutusTx.makeLift ''Bidders
 newtype Approvals = Approvals [PubKeyHash] 
     deriving stock (P.Eq, P.Show, Generic)
     deriving anyclass (ToJSON, FromJSON, ToSchema)
-    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData)
 
 PlutusTx.makeLift ''Approvals
 
@@ -85,7 +84,7 @@ PlutusTx.makeLift ''Approvals
 newtype Registration = Registration PubKeyHash 
     deriving stock (P.Eq, P.Show, Generic)
     deriving anyclass (ToJSON, FromJSON, ToSchema)
-    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData)
 
 PlutusTx.makeLift ''Registration
 
