@@ -11,26 +11,30 @@ module Auction.Offchain
     )
     where
   
-import           Control.Monad 
-import qualified Data.Map as Map
+import           Control.Monad ( void ) 
 import           Data.Monoid (Last (..))
 import qualified Data.Text as T
-import           Text.Printf 
 
-import           Ledger
+import           Ledger ( PubKeyHash )
 import           Ledger.Ada as Ada ( lovelaceValueOf )
-import qualified Ledger.Constraints as Constraints
-import           Plutus.ChainIndex.Tx 
-import           Plutus.Contract
-import           Plutus.Contract.StateMachine
-import qualified PlutusTx
-import           Ledger.Value 
-import qualified Plutus.Contracts.Currency as Currency
 
-import           Auction.Bidders 
-import           Auction.Onchain 
-import           Auction.Share
-import           Auction.Types 
+import           Plutus.Contract
+                    ( Contract,
+                    type (.\/),
+                    Endpoint,
+                    Promise(awaitPromise),
+                    endpoint,
+                    ownPubKeyHash,
+                    mapError,
+                    select,
+                    logInfo,
+                    tell )
+import           Plutus.Contract.StateMachine ( SMContractError, getThreadToken, runInitialise, runStep )
+
+import           Auction.Bidders ( mkBidders ) 
+import           Auction.Onchain ( auctionClient ) 
+import           Auction.Share ( auctionedTokenValue, minLovelace )
+import           Auction.Types ( Seller(..), Bid(..), AuctionParams(..), AuctionDatum(..), AuctionRedeemer(..), StartParams(..) ) 
 
 
 type AuctionSchema =
