@@ -9,62 +9,58 @@ module Spec.Auction.Unit
 
 import           Cardano.Crypto.Hash as Crypto ( Blake2b_256, hashToBytes, hashWith )
 import           Control.Lens ( (&), (.~) )
-import           Control.Monad                      (void)
+import           Control.Monad (void)
 import           Control.Monad.Freer.Extras as Extras ( logInfo )
-import           Data.Default                       (Default (def))
+import           Data.Default (Default (def))
 import qualified Data.Map as Map
-import           Data.Monoid                        (Last (..))
+import           Data.Monoid (Last (..))
 import qualified Data.Text as T
 
-import           Ledger                            
-import qualified Ledger.Ada                         as Ada
+import           Ledger ( PubKeyHash, AssetClass, TokenName, Value )                            
+import qualified Ledger.Ada as Ada
 import           Plutus.Contract.Test
-                        ( Wallet,
-                        walletPubKeyHash,
-                        (.&&.),
-                        assertNoFailedTransactions,
-                        checkPredicateOptions,
-                        defaultCheckOptions,
-                        emulatorConfig,
-                        w10,
-                        w2,
-                        w3,
-                        w4,
-                        w5,
-                        w6,
-                        w7,
-                        w8,
-                        walletFundsChange )
-import           Ledger.TimeSlot                    (SlotConfig)
-import qualified Ledger.TimeSlot                    as TimeSlot
-import qualified Ledger.Value                       as Value
-import qualified Plutus.Trace.Emulator              as Trace  
-import           PlutusTx.Monoid                    (inv)
-import qualified PlutusTx.Prelude                   as PlutusTx
+                    ( (.&&.),
+                    assertNoFailedTransactions,
+                    checkPredicateOptions,
+                    defaultCheckOptions,
+                    emulatorConfig,
+                    w2,
+                    w3,
+                    w4,
+                    w5,
+                    w6,
+                    w7,
+                    walletFundsChange,
+                    walletPubKeyHash,
+                    Wallet )
+import           Ledger.TimeSlot (SlotConfig)
+import qualified Ledger.TimeSlot as TimeSlot
+import qualified Ledger.Value as Value
+import qualified Plutus.Trace.Emulator as Trace  
+import           PlutusTx.Monoid (inv)
+import qualified PlutusTx.Prelude as PlutusTx
 
 import           Test.Tasty ( TestTree, testGroup )
 
 import           Auction.Offchain ( endpoints, AuctionSchema ) 
-import           Auction.Share
-import           Auction.Types 
+import           Auction.Share ( minLovelace )
+import           Auction.Types ( AuctionParams, StartParams(..) ) 
 
-walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE, walletBidderF :: Wallet 
-walletSeller    = w2 -- W7ce812d
-walletBidderA   = w3 -- Wc30efb7
+walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE :: Wallet 
+walletSeller    = w2 
+walletBidderA   = w3 
 walletBidderB   = w4 
 walletBidderC   = w5 
 walletBidderD   = w6 
 walletBidderE   = w7 
-walletBidderF   = w8
 
 
-pkhA, pkhB, pkhC, pkhD, pkhE, pkhF :: PubKeyHash
+pkhA, pkhB, pkhC, pkhD, pkhE :: PubKeyHash
 pkhA = walletPubKeyHash walletBidderA
 pkhB = walletPubKeyHash walletBidderB
 pkhC = walletPubKeyHash walletBidderC
 pkhD = walletPubKeyHash walletBidderD
 pkhE = walletPubKeyHash walletBidderE
-pkhF = walletPubKeyHash walletBidderF
 
 
 slotCfg :: SlotConfig
@@ -80,8 +76,7 @@ emCfg = Trace.EmulatorConfig (Left dist) def def
             , (walletBidderB, Ada.lovelaceValueOf 1_000_000_000)
             , (walletBidderC, Ada.lovelaceValueOf 1_000_000_000)    
             , (walletBidderD, Ada.lovelaceValueOf 1_000_000_000)       
-            , (walletBidderE, Ada.lovelaceValueOf 1_000_000_000)     
-            , (walletBidderF, Ada.lovelaceValueOf 1_000_000_000)                                                                                                            
+            , (walletBidderE, Ada.lovelaceValueOf 1_000_000_000)                                                                                                          
             ]  
 
 
