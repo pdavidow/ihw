@@ -1,5 +1,5 @@
 ## OBJECTIVE
-Auction for priveledged bidders.
+Auction for privileged bidders.
 
 ## USAGE
 `cabal run spectests`
