@@ -1,5 +1,5 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE RecordWildCards #-}
+
 
 module Auction.Share
     ( auctionedTokenValue
@@ -10,7 +10,7 @@ module Auction.Share
 
 import           Ledger ( PubKeyHash, AssetClass, Value ) 
 import           Ledger.Value as Value ( assetClassValue ) 
-import           PlutusTx.Prelude ( Bool, Integer, Eq((==)), (.), not, null, Foldable ) 
+import           PlutusTx.Prelude ( Bool, Eq((==)), (.), not, null, Foldable ) 
 
 import           Auction.Types ( Seller(..) ) 
 
