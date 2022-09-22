@@ -16,7 +16,6 @@ import           Data.Monoid (Last (..))
 import qualified Data.Text as T
 
 import           Ledger ( PubKeyHash )
-import           Ledger.Ada as Ada ( lovelaceValueOf )
 
 import           Plutus.Contract
                     ( Contract,
