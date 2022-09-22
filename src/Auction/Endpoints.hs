@@ -100,7 +100,7 @@ approve (params, pkhs) = do
     void $ mapErrorSM $ runStep (auctionClient params) $ Approve self pkhs
 
 
-bid :: (AuctionParams, Integer )-> Contract w AuctionSchema T.Text ()
+bid :: (AuctionParams, Integer) -> Contract w AuctionSchema T.Text ()
 bid (params, n) = do 
     self <- ownPubKeyHash
     void $ mapErrorSM $ runStep (auctionClient params) $ MkBid $ Bid self n
