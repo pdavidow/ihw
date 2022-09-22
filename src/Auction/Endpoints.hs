@@ -33,7 +33,7 @@ import           Plutus.Contract.StateMachine ( SMContractError, getThreadToken,
 
 import           Auction.Bidders ( mkBidders ) 
 import           Auction.Chain ( auctionClient ) 
-import           Auction.Share ( auctionedTokenValue, minLovelace )
+import           Auction.Share ( auctionedTokenValue )
 import           Auction.Types ( Seller(..), Bid(..), AuctionParams(..), AuctionDatum(..), AuctionRedeemer(..), StartParams(..) ) 
 
 
@@ -81,7 +81,7 @@ start StartParams{..} = do
 
     let client = auctionClient params
     let datum = InProgress Nothing mkBidders
-    let val = auctionedTokenValue (apAsset params) <> Ada.lovelaceValueOf minLovelace
+    let val = auctionedTokenValue (apAsset params)
        
     void $ mapErrorSM $ runInitialise client datum val
     tell $ Last $ Just params

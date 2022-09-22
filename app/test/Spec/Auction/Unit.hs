@@ -43,7 +43,6 @@ import qualified PlutusTx.Prelude as PlutusTx
 import           Test.Tasty ( TestTree, testGroup )
 
 import           Auction.Endpoints ( endpoints, AuctionSchema ) 
-import           Auction.Share ( minLovelace )
 import           Auction.Types ( AuctionParams, StartParams(..) ) 
 
 walletSeller, walletBidderA, walletBidderB, walletBidderC, walletBidderD, walletBidderE :: Wallet 
@@ -170,8 +169,8 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "1 bid at min, registered & approved upfront"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace) <> inv theTokenVal)   
-        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace)) <> theTokenVal)                            
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf lowestAcceptableBid <> inv theTokenVal)   
+        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf lowestAcceptableBid) <> theTokenVal)                            
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
@@ -321,8 +320,8 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "1 bid at min, registered once, approved twice upfront"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace) <> inv theTokenVal)   
-        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace)) <> theTokenVal)                            
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf lowestAcceptableBid <> inv theTokenVal)   
+        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf lowestAcceptableBid) <> theTokenVal)                            
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
@@ -356,8 +355,8 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "1 bid at min, registered twice, approved twice upfront"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace) <> inv theTokenVal)   
-        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace)) <> theTokenVal)                            
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf lowestAcceptableBid <> inv theTokenVal)   
+        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf lowestAcceptableBid) <> theTokenVal)                            
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
@@ -393,8 +392,8 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "1 bid above min, bidder registered, bidder and another approved"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (200_000_000 - minLovelace) <> inv theTokenVal)   
-        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf (200_000_000 - minLovelace)) <> theTokenVal)                            
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 200_000_000 <> inv theTokenVal)   
+        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf 200_000_000) <> theTokenVal)                            
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hBidderA <- Trace.activateContractWallet walletBidderA endpoints           
@@ -426,8 +425,8 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "2 bids higher than min, but second lower than first, yes approved upfront"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (200_000_000 - minLovelace) <> inv theTokenVal)   
-        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf (200_000_000 - minLovelace)) <> theTokenVal)  
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 200_000_000 <> inv theTokenVal)   
+        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf 200_000_000) <> theTokenVal)  
         .&&. walletFundsChange walletBidderB mempty             
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
@@ -467,9 +466,9 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "2 bids higher than min, second higher than first, yes approved upfront"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (200_000_001 - minLovelace) <> inv theTokenVal)   
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 200_000_001 <> inv theTokenVal)   
         .&&. walletFundsChange walletBidderA mempty         
-        .&&. walletFundsChange walletBidderB (inv (Ada.lovelaceValueOf (200_000_001 - minLovelace)) <> theTokenVal)             
+        .&&. walletFundsChange walletBidderB (inv (Ada.lovelaceValueOf 200_000_001) <> theTokenVal)             
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hBidderA <- Trace.activateContractWallet walletBidderA endpoints           
@@ -508,9 +507,9 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "2 bids: First lower than min, second at min, yes approved upfront"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace) <> inv theTokenVal)   
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf lowestAcceptableBid <> inv theTokenVal)   
         .&&. walletFundsChange walletBidderA mempty         
-        .&&. walletFundsChange walletBidderB (inv (Ada.lovelaceValueOf (lowestAcceptableBid - minLovelace)) <> theTokenVal)             
+        .&&. walletFundsChange walletBidderB (inv (Ada.lovelaceValueOf lowestAcceptableBid) <> theTokenVal)             
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hBidderA <- Trace.activateContractWallet walletBidderA endpoints           
@@ -549,12 +548,12 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "5 bids higher than min, each higher than previous, yes approved upfront"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (100_000_005 - minLovelace) <> inv theTokenVal)   
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 100_000_005 <> inv theTokenVal)   
         .&&. walletFundsChange walletBidderA mempty         
         .&&. walletFundsChange walletBidderB mempty 
         .&&. walletFundsChange walletBidderC mempty 
         .&&. walletFundsChange walletBidderD mempty                         
-        .&&. walletFundsChange walletBidderE (inv (Ada.lovelaceValueOf (100_000_005 - minLovelace)) <> theTokenVal)             
+        .&&. walletFundsChange walletBidderE (inv (Ada.lovelaceValueOf 100_000_005) <> theTokenVal)             
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
@@ -614,9 +613,9 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "2 bids higher than min, second higher than first; yes approved first upfront, but approve second after first bid"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (200_000_001 - minLovelace) <> inv theTokenVal)   
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 200_000_001 <> inv theTokenVal)   
         .&&. walletFundsChange walletBidderA mempty         
-        .&&. walletFundsChange walletBidderB (inv (Ada.lovelaceValueOf (200_000_001 - minLovelace)) <> theTokenVal)              
+        .&&. walletFundsChange walletBidderB (inv (Ada.lovelaceValueOf 200_000_001) <> theTokenVal)              
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          
             hBidderA <- Trace.activateContractWallet walletBidderA endpoints
@@ -657,8 +656,8 @@ tests = testGroup "Auction unit"
         (defaultCheckOptions & (emulatorConfig .~ emCfg))
         "2 bids higher than min, second higher than first, yes approved first only upfront, approve second after second bid"
         ( assertNoFailedTransactions    
-        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf (200_000_000 - minLovelace) <> inv theTokenVal)          
-        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf (200_000_000 - minLovelace)) <> theTokenVal)     
+        .&&. walletFundsChange walletSeller (Ada.lovelaceValueOf 200_000_000 <> inv theTokenVal)          
+        .&&. walletFundsChange walletBidderA (inv (Ada.lovelaceValueOf 200_000_000) <> theTokenVal)     
         .&&. walletFundsChange walletBidderB mempty                  
         ) $ do
             hSeller <- Trace.activateContractWallet walletSeller endpoints          

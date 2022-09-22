@@ -53,7 +53,7 @@ import           PlutusTx.Prelude
                     maybe )
 
 import           Auction.Bidders ( approveBidders, isAnyApprovals, isBidderApproved, registerBidder, validateApprovees, validateRegisteree ) 
-import           Auction.Share ( auctionedTokenValue, isSeller, minLovelace, notNull ) 
+import           Auction.Share ( auctionedTokenValue, isSeller, notNull ) 
 import           Auction.Types ( Seller(..), Bid(..), AuctionParams(..), AuctionDatum(..), AuctionRedeemer(..) ) 
 
 
@@ -115,7 +115,7 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
         -> Just (constraints, newState)
             where 
                 h' = Just b 
-                v' = auctionedTokenValue apAsset <> Ada.lovelaceValueOf (minLovelace + n)
+                v' = auctionedTokenValue apAsset <> Ada.lovelaceValueOf n
                 payBackPrev = \bid -> Constraints.mustPayToPubKey (bBidder bid) (Ada.lovelaceValueOf $ bBid bid)
                 newState = State (InProgress h' bidders) v'   
 
@@ -128,7 +128,7 @@ transition AuctionParams{..} State{..} r = case (stateValue, stateData, r) of
         -> Just (constraints, newState)
             where 
                 seller = unSeller apSeller
-                val = auctionedTokenValue apAsset <> Ada.lovelaceValueOf minLovelace
+                val = auctionedTokenValue apAsset
                 newState = State Finished mempty  
 
                 constraints 

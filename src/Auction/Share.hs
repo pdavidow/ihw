@@ -4,7 +4,6 @@
 module Auction.Share
     ( auctionedTokenValue
     , isSeller
-    , minLovelace
     , notNull
     ) 
     where
@@ -24,11 +23,6 @@ notNull = not . null
 {-# INLINABLE auctionedTokenValue #-}
 auctionedTokenValue :: AssetClass -> Value
 auctionedTokenValue x = Value.assetClassValue x 1
-
-
-{-# INLINABLE minLovelace #-}
-minLovelace :: Integer
-minLovelace = 2000000
 
 
 {-# INLINABLE isSeller #-}
