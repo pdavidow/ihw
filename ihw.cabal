@@ -21,10 +21,9 @@ common project-config
                         -Wunused-packages
 
 library
-  exposed-modules:   Anchor
-                     , Auction.Bidders 
-                     , Auction.Offchain
-                     , Auction.Onchain
+  exposed-modules:   Auction.Bidders 
+                     , Auction.Endpoints
+                     , Auction.Chain
                      , Auction.Share         
                      , Auction.Types
 
@@ -39,7 +38,8 @@ library
                      , data-default
                      , deepseq
                      , dlist       
-                     , either            
+                     , either     
+                     , extra       
                      , freer-extras
                      , lens
                      , nonempty-containers
@@ -68,9 +68,6 @@ test-suite spectests
   main-is:             Spec.hs
   hs-source-dirs:      app/test
   other-modules:       Spec.Auction.Unit
-                       , Spec.Auction.Trace
- 
-
   default-language:    Haskell2010
   ghc-options:         -Wall -fobject-code -fno-ignore-interface-pragmas -fno-omit-interface-pragmas
   build-depends:       base >= 4.9 && < 5

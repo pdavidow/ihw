@@ -2,41 +2,35 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Auction.Share
-    ( auctionDatum
-    , auctionedTokenValue
-    , minBid
+    ( auctionedTokenValue
+    , isSeller
     , minLovelace
+    , notNull
     ) 
     where
 
-import           Ledger ( Datum(Datum), DatumHash, TxOut, txOutDatum ) 
-import           Ledger.Value as Value ( Value, singleton )
-import qualified PlutusTx
-import           PlutusTx.Prelude ( Integer, Maybe(..), AdditiveSemigroup((+))) 
+import           Ledger ( PubKeyHash, AssetClass, Value ) 
+import           Ledger.Value as Value ( assetClassValue ) 
+import           PlutusTx.Prelude ( Bool, Integer, Eq((==)), (.), not, null, Foldable ) 
 
-import           Auction.Types ( Auction(..), Bid(..), AuctionDatum(..) )
-     
-
-{-# INLINABLE minBid #-}
-minBid :: AuctionDatum -> Integer
-minBid AuctionDatum{..} = case adHighestBid of
-    Nothing      -> aMinBid adAuction
-    Just Bid{..} -> bBid + 1
+import           Auction.Types ( Seller(..) ) 
 
 
-{-# INLINABLE auctionDatum #-}
-auctionDatum :: TxOut -> (DatumHash -> Maybe Datum) -> Maybe AuctionDatum
-auctionDatum o f = do
-    dh <- txOutDatum o
-    Datum d <- f dh
-    PlutusTx.fromBuiltinData d
+{-# INLINABLE notNull #-}
+notNull :: Foldable f => f a -> Bool
+notNull = not . null
 
 
-auctionedTokenValue :: Auction -> Value
-auctionedTokenValue x = Value.singleton (aCurrency x) (aToken x) 1
+{-# INLINABLE auctionedTokenValue #-}
+auctionedTokenValue :: AssetClass -> Value
+auctionedTokenValue x = Value.assetClassValue x 1
 
 
+{-# INLINABLE minLovelace #-}
 minLovelace :: Integer
 minLovelace = 2000000
 
 
+{-# INLINABLE isSeller #-}
+isSeller :: PubKeyHash -> Seller -> Bool
+isSeller pkh x = unSeller x == pkh   

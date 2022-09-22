@@ -15,9 +15,9 @@ module Auction.Bidders
     , Registration -- hide constructor
     , approveBidders  
     , mkBidders   
+    , isAnyApprovals
     , isBidderApproved
     , isAllRegisterd
-    , isAtLeastRegistered
     , isBidderRegistered
     , registerBidder
     , mapFrom
@@ -29,20 +29,20 @@ module Auction.Bidders
     where
 
 import           Data.Aeson (FromJSON, ToJSON)
-import qualified Data.Text as T
 import           GHC.Generics (Generic)
 import           Ledger ( PubKeyHash ) 
 import qualified PlutusTx
 import           PlutusTx.Prelude
                     ( otherwise,
                     Bool(..),
-                    Maybe(Just),
-                    Either(..),
+                    Maybe(..),
+                    Eq(..),
                     ($),
                     (.),
+                    not,
                     all,
                     foldr,
-                    Eq(..) ) 
+                    null )
 import qualified PlutusTx.AssocMap as AssocMap
 import qualified Prelude as P   
 import           Schema (ToSchema)
@@ -76,7 +76,7 @@ PlutusTx.makeLift ''Bidders
 newtype Approvals = Approvals [PubKeyHash] 
     deriving stock (P.Eq, P.Show, Generic)
     deriving anyclass (ToJSON, FromJSON, ToSchema)
-    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData)
 
 PlutusTx.makeLift ''Approvals
 
@@ -84,7 +84,7 @@ PlutusTx.makeLift ''Approvals
 newtype Registration = Registration PubKeyHash 
     deriving stock (P.Eq, P.Show, Generic)
     deriving anyclass (ToJSON, FromJSON, ToSchema)
-    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData)
 
 PlutusTx.makeLift ''Registration
 
@@ -97,10 +97,12 @@ newtype NotRegistereds = NotRegistereds [PubKeyHash]
     deriving P.Show
 
 
+{-# INLINABLE mkBidders #-}
 mkBidders :: Bidders
 mkBidders = Bidders AssocMap.empty
 
 
+{-# INLINABLE mapFrom #-}
 mapFrom :: Bidders -> BiddersMap
 mapFrom (Bidders x) = x
 
@@ -115,6 +117,11 @@ pkhsForApprovals :: Approvals -> [PubKeyHash]
 pkhsForApprovals (Approvals xs) = xs
 
 
+{-# INLINABLE isAnyApprovals #-}
+isAnyApprovals :: Approvals -> Bool 
+isAnyApprovals (Approvals xs) = not $ null xs
+
+
 {-# INLINABLE isBidderRegistered #-}
 isBidderRegistered :: Bidders -> PubKeyHash -> Bool 
 isBidderRegistered b pkh = Just Registered == AssocMap.lookup pkh (mapFrom b)
@@ -125,29 +132,30 @@ isBidderApproved :: Bidders -> PubKeyHash -> Bool
 isBidderApproved b pkh = Just Approved == AssocMap.lookup pkh (mapFrom b)
 
 
+{-# INLINABLE isAllRegisterd #-}
 isAllRegisterd :: Bidders -> [PubKeyHash] -> Bool 
 isAllRegisterd = all . isBidderRegistered 
 
 
-isAtLeastRegistered :: Bidders -> PubKeyHash -> Bool      
-isAtLeastRegistered b pkh = AssocMap.member pkh (mapFrom b)
-
-
+{-# INLINABLE registerBidder #-}
 registerBidder :: Bidders -> Registration -> Bidders
 registerBidder b x = Bidders $ AssocMap.insert (pkhForRegistration x) Registered (mapFrom b)
 
 
+{-# INLINABLE approveBidders #-}
 approveBidders :: Bidders -> Approvals -> Bidders
 approveBidders b x = Bidders $ foldr (`AssocMap.insert` Approved) (mapFrom b) $ pkhsForApprovals x
 
 
-validateRegisteree :: Bidders -> PubKeyHash -> Either T.Text Registration
+{-# INLINABLE validateRegisteree #-}
+validateRegisteree :: Bidders -> PubKeyHash -> Maybe Registration
 validateRegisteree b x
-  | isBidderRegistered b x = Left "already registered"
-  | isBidderApproved b x = Left "already approved"
-  | otherwise = Right $ Registration x
+  | isBidderRegistered b x = Nothing 
+  | isBidderApproved b x = Nothing 
+  | otherwise = Just $ Registration x  
 
 
+{-# INLINABLE validateApprovees #-}
 validateApprovees :: Bidders -> [PubKeyHash] -> (Approvals, AlreadyApproveds, NotRegistereds)
 validateApprovees b = foldr f (Approvals [], AlreadyApproveds [], NotRegistereds [])
     where f = \ x (Approvals as, AlreadyApproveds bs, NotRegistereds cs) ->

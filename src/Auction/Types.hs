@@ -5,16 +5,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 
 module Auction.Types
-    ( ApproveParams(..)
-    , Auction(..)
-    , AuctionAction(..)
-    , AuctionDatum(..)
+    ( AuctionDatum(..)
+    , AuctionParams(..)
+    , AuctionRedeemer(..)
     , Bid(..)
-    , BidParams(..)
-    , CloseParams(..)
-    , RegisterParams(..)
     , Seller(..)
     , StartParams(..)
     ) 
@@ -23,110 +20,83 @@ module Auction.Types
 import           Data.Aeson (FromJSON, ToJSON)
 import           GHC.Generics (Generic)
 
-import           Ledger ( PubKeyHash, POSIXTime ) 
-import           Ledger.Value as Value ( TokenName, CurrencySymbol )
+import           Ledger ( POSIXTime, PubKeyHash(PubKeyHash), AssetClass )  
+import           Plutus.Contract.StateMachine ( ThreadToken )
 import qualified PlutusTx
-import           PlutusTx.Prelude ( Integer, Maybe, Eq(..), (&&) ) 
+import           PlutusTx.Prelude ( Bool(..), Integer, Maybe, Eq(..), (&&) ) 
 import qualified Prelude as P   
 import           Schema (ToSchema)
 
-import           Anchor ( AnchorGraveyard, Anchor )
-import           Auction.Bidders ( Bidders, Approvals, Registration )
+import           Auction.Bidders ( Bidders )
 
 
 newtype Seller = Seller {unSeller :: PubKeyHash}
     deriving stock (P.Eq, P.Show, Generic)
     deriving anyclass (ToJSON, FromJSON, ToSchema)
-    deriving newtype (Eq, PlutusTx.ToData, PlutusTx.FromData, PlutusTx.UnsafeFromData)
+    deriving newtype (Eq)
 
+PlutusTx.makeIsDataIndexed ''Seller [('Seller, 0)]
 PlutusTx.makeLift ''Seller
 
-
-data Auction = Auction
-    { aSeller   :: !Seller
-    , aBidders  :: !Bidders
-    , aDeadline :: !POSIXTime
-    , aMinBid   :: !Integer
-    , aCurrency :: !CurrencySymbol
-    , aToken    :: !TokenName
-    } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
-
-instance Eq Auction where
-    {-# INLINABLE (==) #-}
-    a == b = (aSeller   a == aSeller   b) &&
-             (aBidders  a == aBidders  b) &&    
-             (aDeadline a == aDeadline b) &&
-             (aMinBid   a == aMinBid   b) &&
-             (aCurrency a == aCurrency b) &&
-             (aToken    a == aToken    b)
-
-PlutusTx.unstableMakeIsData ''Auction
-PlutusTx.makeLift ''Auction
-
-
+---------------------
 data Bid = Bid
     { bBidder :: !PubKeyHash
     , bBid    :: !Integer
-    } deriving P.Show
+    } deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON, ToSchema)
 
 instance Eq Bid where
     {-# INLINABLE (==) #-}
-    b == c = (bBidder b == bBidder c) &&
-             (bBid    b == bBid    c)
+    x == y = (bBidder x == bBidder y) &&
+             (bBid    x == bBid    y)
 
-PlutusTx.unstableMakeIsData ''Bid
+PlutusTx.makeIsDataIndexed ''Bid [('Bid, 0)]
 PlutusTx.makeLift ''Bid
 
+---------------------
+data AuctionParams = AuctionParams
+    { apSeller :: !Seller
+    , apDeadline :: !POSIXTime
+    , apMinBid :: !Integer 
+    , apAsset :: !AssetClass
+    , apAnchor :: !ThreadToken    
+    } deriving (P.Show, Generic, ToJSON, FromJSON, ToSchema)
 
-data AuctionAction 
-    = Register !Registration
-    | Approve PubKeyHash Approvals
-    | MkBid !Bid 
-    | Close 
-    deriving P.Show
+PlutusTx.makeIsDataIndexed ''AuctionParams [('AuctionParams, 0)]
+PlutusTx.makeLift ''AuctionParams
 
-PlutusTx.unstableMakeIsData ''AuctionAction
-PlutusTx.makeLift ''AuctionAction
+---------------------
+data AuctionDatum 
+    = InProgress
+        { adHighestBid :: !(Maybe Bid)
+        , adBidders :: !Bidders
+        } 
+    | Finished
+        deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON)
 
-
-data AuctionDatum = AuctionDatum
-    { adAuction    :: !Auction
-    , adHighestBid :: !(Maybe Bid)
-    , adAnchor :: !Anchor
-    } deriving P.Show
-
-PlutusTx.unstableMakeIsData ''AuctionDatum
+PlutusTx.makeIsDataIndexed ''AuctionDatum [('InProgress, 0), ('Finished, 1)]
 PlutusTx.makeLift ''AuctionDatum
 
+instance Eq AuctionDatum where
+    {-# INLINABLE (==) #-}
+    InProgress x y == InProgress x' y' = (x == x') && (y == y')
+    Finished == Finished = True
+    _ == _ = False
 
+---------------------
+data AuctionRedeemer 
+    = Register !PubKeyHash
+    | Approve !PubKeyHash ![PubKeyHash]
+    | MkBid !Bid 
+    | Close 
+    deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON)
+
+PlutusTx.makeIsDataIndexed ''AuctionRedeemer [('Register, 0), ('Approve, 1), ('MkBid,  2), ('Close, 3)]
+PlutusTx.makeLift ''AuctionRedeemer
+
+---------------------
 data StartParams = StartParams
     { spDeadline :: !POSIXTime
-    , spMinBid   :: !Integer
-    , spCurrency :: !CurrencySymbol
-    , spToken    :: !TokenName    
-    } deriving (Generic, ToJSON, FromJSON, ToSchema)
-
+    , spMinBid :: !Integer
+    , spAsset :: !AssetClass  
+    } deriving (P.Show, P.Eq, Generic, ToJSON, FromJSON, ToSchema)
  
-newtype RegisterParams = RegisterParams 
-    { rpAnchor :: Anchor
-    } 
-    deriving (Generic)
-    deriving newtype (ToJSON, FromJSON, ToSchema)
- 
-
-data ApproveParams = ApproveParams
-    { apApprovals :: ![PubKeyHash] -- todo: use Non Empty List
-    , apAnchor :: !Anchor
-    } deriving (Generic, ToJSON, FromJSON, ToSchema)
-
-
-data BidParams = BidParams
-    { bpBid    :: !Integer
-    , bpAnchor :: !Anchor
-    } deriving (Generic, ToJSON, FromJSON, ToSchema)
-
-
-data CloseParams = CloseParams 
-    { cpAnchorGraveyard :: !AnchorGraveyard
-    , cpAnchor :: !Anchor
-    } deriving (Generic, ToJSON, FromJSON, ToSchema)
